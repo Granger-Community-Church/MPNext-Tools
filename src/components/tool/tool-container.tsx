@@ -12,6 +12,7 @@ interface ToolContainerProps {
   saveLabel?: string;
   isSaving?: boolean;
   hideFooter?: boolean;
+  footerExtra?: React.ReactNode;
   children: React.ReactNode;
 }
 
@@ -24,6 +25,7 @@ export function ToolContainer({
   saveLabel,
   isSaving,
   hideFooter,
+  footerExtra,
   children,
 }: ToolContainerProps) {
   return (
@@ -41,6 +43,7 @@ export function ToolContainer({
           closeLabel={closeLabel}
           saveLabel={saveLabel}
           isSaving={isSaving}
+          footerExtra={footerExtra}
         />
       )}
     </div>

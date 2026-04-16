@@ -65,6 +65,20 @@ export default function Home() {
             </Link>
           </CardContent>
         </Card>
+
+        <Card className="flex flex-col">
+          <CardHeader>
+            <CardTitle>Field Management</CardTitle>
+            <CardDescription>
+              Field Management tool for Ministry Platform
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="mt-auto">
+            <Link href="/tools/fieldmanagement">
+              <Button className="w-full">Open Tool</Button>
+            </Link>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

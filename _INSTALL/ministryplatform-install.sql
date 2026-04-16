@@ -1,6 +1,6 @@
 -- =============================================
 -- Ministry Platform Database Install Script
--- Generated: 2026-04-16T01:09:01.359Z
+-- Generated: 2026-04-16T15:53:13.399Z
 -- Auto-generated - Do not edit manually
 -- =============================================
 -- NOTE: Run this script against your Ministry Platform database
@@ -259,6 +259,369 @@ GO
 GO
 
 -- =============================================
+-- FILE: api_MPNextTools_GetPageFields.sql
+-- =============================================
+
+/****** Object:  StoredProcedure [dbo].[api_MPNextTools_GetPageFields]    Script Date: 04/16/2026 ******/
+DROP PROCEDURE IF EXISTS [dbo].[api_MPNextTools_GetPageFields]
+GO
+
+/****** Object:  StoredProcedure [dbo].[api_MPNextTools_GetPageFields]    Script Date: 04/16/2026 ******/
+-- =============================================
+-- api_MPNextTools_GetPageFields
+-- =============================================
+-- Description: Returns all page field records for a given Page_ID
+-- Last Modified: 04/16/2026
+-- Chris Kehayias
+-- =============================================
+CREATE PROCEDURE [dbo].[api_MPNextTools_GetPageFields]
+    @DomainID INT,
+    @PageID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT Page_Field_ID, Page_ID, Field_Name, Group_Name, View_Order,
+           Required, Hidden, Default_Value, Filter_Clause,
+           Depends_On_Field, Field_Label, Writing_Assistant_Enabled
+    FROM dp_Page_Fields
+    WHERE Page_ID = @PageID
+    ORDER BY View_Order
+
+END
+GO
+
+-- =============================================
+-- SP MetaData Install
+-- =============================================
+DECLARE @spName NVARCHAR(128) = 'api_MPNextTools_GetPageFields';
+DECLARE @spDescription NVARCHAR(500) = 'Returns all page field records for a given Page_ID';
+
+IF NOT EXISTS (
+    SELECT API_Procedure_ID FROM dp_API_Procedures WHERE Procedure_Name = @spName
+)
+BEGIN
+    INSERT INTO dp_API_Procedures (Procedure_Name, Description)
+    VALUES (@spName, @spDescription);
+END
+
+-- Grant to Administrators Role
+DECLARE @AdminRoleID INT = (
+    SELECT Role_ID FROM dp_Roles WHERE Role_Name = 'Administrators'
+);
+
+IF NOT EXISTS (
+    SELECT 1
+    FROM dp_Role_API_Procedures RP
+    INNER JOIN dp_API_Procedures AP ON AP.API_Procedure_ID = RP.API_Procedure_ID
+    WHERE AP.Procedure_Name = @spName AND RP.Role_ID = @AdminRoleID
+)
+BEGIN
+    INSERT INTO dp_Role_API_Procedures (Domain_ID, API_Procedure_ID, Role_ID)
+    VALUES (
+        1,
+        (SELECT API_Procedure_ID FROM dp_API_Procedures WHERE Procedure_Name = @spName),
+        @AdminRoleID
+    );
+END
+GO
+
+GO
+
+-- =============================================
+-- FILE: api_MPNextTools_GetPages.sql
+-- =============================================
+
+/****** Object:  StoredProcedure [dbo].[api_MPNextTools_GetPages]    Script Date: 04/16/2026 ******/
+DROP PROCEDURE IF EXISTS [dbo].[api_MPNextTools_GetPages]
+GO
+
+/****** Object:  StoredProcedure [dbo].[api_MPNextTools_GetPages]    Script Date: 04/16/2026 ******/
+-- =============================================
+-- api_MPNextTools_GetPages
+-- =============================================
+-- Description: Returns a simple list of page metadata (Page_ID, Display_Name, Table_Name)
+-- Last Modified: 04/16/2026
+-- Chris Kehayias
+-- =============================================
+CREATE PROCEDURE [dbo].[api_MPNextTools_GetPages]
+    @DomainID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT Page_ID, Display_Name, Table_Name
+    FROM dp_Pages
+    ORDER BY Display_Name
+
+END
+GO
+
+-- =============================================
+-- SP MetaData Install
+-- =============================================
+DECLARE @spName NVARCHAR(128) = 'api_MPNextTools_GetPages';
+DECLARE @spDescription NVARCHAR(500) = 'Returns a simple list of page metadata (Page_ID, Display_Name, Table_Name)';
+
+IF NOT EXISTS (
+    SELECT API_Procedure_ID FROM dp_API_Procedures WHERE Procedure_Name = @spName
+)
+BEGIN
+    INSERT INTO dp_API_Procedures (Procedure_Name, Description)
+    VALUES (@spName, @spDescription);
+END
+
+-- Grant to Administrators Role
+DECLARE @AdminRoleID INT = (
+    SELECT Role_ID FROM dp_Roles WHERE Role_Name = 'Administrators'
+);
+
+IF NOT EXISTS (
+    SELECT 1
+    FROM dp_Role_API_Procedures RP
+    INNER JOIN dp_API_Procedures AP ON AP.API_Procedure_ID = RP.API_Procedure_ID
+    WHERE AP.Procedure_Name = @spName AND RP.Role_ID = @AdminRoleID
+)
+BEGIN
+    INSERT INTO dp_Role_API_Procedures (Domain_ID, API_Procedure_ID, Role_ID)
+    VALUES (
+        1,
+        (SELECT API_Procedure_ID FROM dp_API_Procedures WHERE Procedure_Name = @spName),
+        @AdminRoleID
+    );
+END
+GO
+
+GO
+
+-- =============================================
+-- FILE: api_MPNextTools_UpdatePageFieldOrder.sql
+-- =============================================
+
+/****** Object:  StoredProcedure [dbo].[api_MPNextTools_UpdatePageFieldOrder]    Script Date: 04/16/2026 ******/
+DROP PROCEDURE IF EXISTS [dbo].[api_MPNextTools_UpdatePageFieldOrder]
+GO
+
+/****** Object:  StoredProcedure [dbo].[api_MPNextTools_UpdatePageFieldOrder]    Script Date: 04/16/2026 ******/
+-- =============================================
+-- api_MPNextTools_UpdatePageFieldOrder
+-- =============================================
+-- Description: Upserts a page field row by Page_ID + Field_Name.
+--              Updates if exists, inserts if not.
+-- Last Modified: 04/16/2026
+-- Chris Kehayias
+-- =============================================
+CREATE PROCEDURE [dbo].[api_MPNextTools_UpdatePageFieldOrder]
+    @DomainID INT,
+    @PageID INT,
+    @FieldName VARCHAR(64),
+    @GroupName NVARCHAR(75) = NULL,
+    @ViewOrder SMALLINT = NULL,
+    @Required BIT = 0,
+    @Hidden BIT = 0,
+    @DefaultValue NVARCHAR(128) = NULL,
+    @FilterClause NVARCHAR(2000) = NULL,
+    @DependsOnField VARCHAR(64) = NULL,
+    @FieldLabel NVARCHAR(64) = NULL,
+    @WritingAssistantEnabled BIT = 0
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF EXISTS (
+        SELECT 1 FROM dp_Page_Fields
+        WHERE Page_ID = @PageID AND Field_Name = @FieldName
+    )
+    BEGIN
+        UPDATE dp_Page_Fields
+        SET Group_Name = @GroupName,
+            View_Order = @ViewOrder,
+            Required = @Required,
+            Hidden = @Hidden,
+            Default_Value = @DefaultValue,
+            Filter_Clause = @FilterClause,
+            Depends_On_Field = @DependsOnField,
+            Field_Label = @FieldLabel,
+            Writing_Assistant_Enabled = @WritingAssistantEnabled
+        WHERE Page_ID = @PageID AND Field_Name = @FieldName;
+    END
+    ELSE
+    BEGIN
+        INSERT INTO dp_Page_Fields (
+            Page_ID, Field_Name, Group_Name, View_Order,
+            Required, Hidden, Default_Value, Filter_Clause,
+            Depends_On_Field, Field_Label, Writing_Assistant_Enabled
+        )
+        VALUES (
+            @PageID, @FieldName, @GroupName, @ViewOrder,
+            @Required, @Hidden, @DefaultValue, @FilterClause,
+            @DependsOnField, @FieldLabel, @WritingAssistantEnabled
+        );
+    END
+
+END
+GO
+
+-- =============================================
+-- SP MetaData Install
+-- =============================================
+DECLARE @spName NVARCHAR(128) = 'api_MPNextTools_UpdatePageFieldOrder';
+DECLARE @spDescription NVARCHAR(500) = 'Upserts a page field row by Page_ID + Field_Name';
+
+IF NOT EXISTS (
+    SELECT API_Procedure_ID FROM dp_API_Procedures WHERE Procedure_Name = @spName
+)
+BEGIN
+    INSERT INTO dp_API_Procedures (Procedure_Name, Description)
+    VALUES (@spName, @spDescription);
+END
+
+-- Grant to Administrators Role
+DECLARE @AdminRoleID INT = (
+    SELECT Role_ID FROM dp_Roles WHERE Role_Name = 'Administrators'
+);
+
+IF NOT EXISTS (
+    SELECT 1
+    FROM dp_Role_API_Procedures RP
+    INNER JOIN dp_API_Procedures AP ON AP.API_Procedure_ID = RP.API_Procedure_ID
+    WHERE AP.Procedure_Name = @spName AND RP.Role_ID = @AdminRoleID
+)
+BEGIN
+    INSERT INTO dp_Role_API_Procedures (Domain_ID, API_Procedure_ID, Role_ID)
+    VALUES (
+        1,
+        (SELECT API_Procedure_ID FROM dp_API_Procedures WHERE Procedure_Name = @spName),
+        @AdminRoleID
+    );
+END
+GO
+
+GO
+
+-- =============================================
+-- FILE: api_dev_GetProcedureDefinition.sql
+-- =============================================
+
+/****** Object:  StoredProcedure [dbo].[api_dev_GetProcedureDefinition]    Script Date: 04/16/2026 ******/
+DROP PROCEDURE IF EXISTS [dbo].[api_dev_GetProcedureDefinition]
+GO
+
+/****** Object:  StoredProcedure [dbo].[api_dev_GetProcedureDefinition]    Script Date: 04/16/2026 ******/
+-- =============================================
+-- api_dev_GetProcedureDefinition
+-- =============================================
+-- Description: Returns the actual create SQL script for a stored procedure to enable LLM context
+-- Last Modified: 04/16/2026
+-- Chris Kehayias
+-- =============================================
+CREATE PROCEDURE [dbo].[api_dev_GetProcedureDefinition]
+    @ProcedureName NVARCHAR(256),
+    @SchemaName NVARCHAR(128) = 'dbo'
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @ObjectId INT;
+    DECLARE @FullName NVARCHAR(512) = QUOTENAME(@SchemaName) + '.' + QUOTENAME(@ProcedureName);
+
+    -- Resolve the object
+    SET @ObjectId = OBJECT_ID(@FullName, 'P');
+
+    IF @ObjectId IS NULL
+    BEGIN
+        -- Try finding it as a case-insensitive partial match
+        SELECT TOP 10
+            s.name AS [Schema],
+            p.name AS [ProcedureName],
+            p.create_date,
+            p.modify_date
+        FROM sys.procedures p
+        JOIN sys.schemas s ON p.schema_id = s.schema_id
+        WHERE p.name LIKE '%' + @ProcedureName + '%'
+        ORDER BY p.name;
+
+        RAISERROR('Procedure [%s].[%s] not found. Possible matches returned above.', 16, 1, @SchemaName, @ProcedureName);
+        RETURN;
+    END
+
+    -- Return the full definition
+    SELECT
+        s.name                          AS [Schema],
+        p.name                          AS [ProcedureName],
+        p.create_date                   AS [Created],
+        p.modify_date                   AS [LastModified],
+        LEN(m.definition)               AS [DefinitionLength],
+        m.definition                    AS [Definition]
+    FROM sys.sql_modules m
+    JOIN sys.procedures p ON m.object_id = p.object_id
+    JOIN sys.schemas s ON p.schema_id = s.schema_id
+    WHERE m.object_id = @ObjectId;
+
+    -- Also return parameter metadata so the LLM understands the interface
+    SELECT
+        par.name                        AS [ParameterName],
+        TYPE_NAME(par.user_type_id)     AS [DataType],
+        par.max_length                  AS [MaxLength],
+        par.precision                   AS [Precision],
+        par.scale                       AS [Scale],
+        par.is_output                   AS [IsOutput],
+        par.has_default_value           AS [HasDefault],
+        par.default_value               AS [DefaultValue],
+        par.parameter_id                AS [OrdinalPosition]
+    FROM sys.parameters par
+    WHERE par.object_id = @ObjectId
+    ORDER BY par.parameter_id;
+END
+GO
+
+-- =============================================
+-- SP MetaData Install
+-- =============================================
+DECLARE @spName NVARCHAR(128) = 'api_dev_GetProcedureDefinition';
+DECLARE @spDescription NVARCHAR(500) = 'Returns the actual create SQL script for a stored procedure to enable LLM context';
+
+IF NOT EXISTS (
+    SELECT API_Procedure_ID FROM dp_API_Procedures WHERE Procedure_Name = @spName
+)
+BEGIN
+    INSERT INTO dp_API_Procedures (Procedure_Name, Description)
+    VALUES (@spName, @spDescription);
+END
+
+-- Ensure DeveloperONLY role exists
+IF NOT EXISTS (
+    SELECT Role_ID FROM dp_Roles WHERE Role_Name = 'DeveloperONLY'
+)
+BEGIN
+    INSERT INTO dp_Roles (Role_Name, Description)
+    VALUES ('DeveloperONLY', 'Developer-only role for tools and procedures not intended for general use');
+END
+
+-- Grant to DeveloperONLY Role
+DECLARE @DevRoleID INT = (
+    SELECT Role_ID FROM dp_Roles WHERE Role_Name = 'DeveloperONLY'
+);
+
+IF NOT EXISTS (
+    SELECT 1
+    FROM dp_Role_API_Procedures RP
+    INNER JOIN dp_API_Procedures AP ON AP.API_Procedure_ID = RP.API_Procedure_ID
+    WHERE AP.Procedure_Name = @spName AND RP.Role_ID = @DevRoleID
+)
+BEGIN
+    INSERT INTO dp_Role_API_Procedures (Domain_ID, API_Procedure_ID, Role_ID)
+    VALUES (
+        1,
+        (SELECT API_Procedure_ID FROM dp_API_Procedures WHERE Procedure_Name = @spName),
+        @DevRoleID
+    );
+END
+GO
+
+GO
+
+-- =============================================
 -- FILE: contact_private_notes.sql
 -- =============================================
 
@@ -301,8 +664,18 @@ IF  EXISTS (SELECT * FROM sys.foreign_keys WHERE object_id = OBJECT_ID(N'[dbo].[
 ALTER TABLE [dbo].[Contact_Private_Notes] CHECK CONSTRAINT [FK_Contact_Private_Notes_dp_Users]
 GO
 
-
-
+-- ========================================================================================
+--      Add Indexes on Foreign Key Columns
+-- ========================================================================================
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Contact_Private_Notes_User_ID' AND object_id = OBJECT_ID(N'[dbo].[Contact_Private_Notes]'))
+CREATE NONCLUSTERED INDEX [IX_Contact_Private_Notes_User_ID] ON [dbo].[Contact_Private_Notes]([User_ID] ASC)
+GO
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Contact_Private_Notes_Contact_ID' AND object_id = OBJECT_ID(N'[dbo].[Contact_Private_Notes]'))
+CREATE NONCLUSTERED INDEX [IX_Contact_Private_Notes_Contact_ID] ON [dbo].[Contact_Private_Notes]([Contact_ID] ASC)
+GO
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Contact_Private_Notes_Domain_ID' AND object_id = OBJECT_ID(N'[dbo].[Contact_Private_Notes]'))
+CREATE NONCLUSTERED INDEX [IX_Contact_Private_Notes_Domain_ID] ON [dbo].[Contact_Private_Notes]([Domain_ID] ASC)
+GO
 
 -- ========================================================================================
 --      Add the Page / Page Section Page / Admin Security Role

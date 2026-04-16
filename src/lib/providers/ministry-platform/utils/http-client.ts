@@ -37,7 +37,7 @@ export class HttpClient {
 
     async post<T = unknown>(endpoint: string, body?: RequestBody, queryParams?: QueryParams): Promise<T> {
         const url = this.buildUrl(endpoint, queryParams);
-        
+
         const response = await fetch(url, {
             method: 'POST',
             headers: {
@@ -49,7 +49,14 @@ export class HttpClient {
         });
 
         if (!response.ok) {
-            throw new Error(`POST ${endpoint} failed: ${response.status} ${response.statusText}`);
+            const responseText = await response.text().catch(() => '');
+            logger.error("POST Request failed:", {
+                status: response.status,
+                statusText: response.statusText,
+                url,
+                responseBody: responseText
+            });
+            throw new Error(`POST ${endpoint} failed: ${response.status} ${response.statusText}${responseText ? ` - ${responseText}` : ''}`);
         }
 
         return await response.json() as T;

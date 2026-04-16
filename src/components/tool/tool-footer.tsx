@@ -6,6 +6,7 @@ interface ToolFooterProps {
   closeLabel?: string;
   saveLabel?: string;
   isSaving?: boolean;
+  footerExtra?: React.ReactNode;
 }
 
 export function ToolFooter({
@@ -14,9 +15,12 @@ export function ToolFooter({
   closeLabel = "Close",
   saveLabel = "Save",
   isSaving = false,
+  footerExtra,
 }: ToolFooterProps) {
   return (
-    <div className="bg-white border-t px-6 py-4 flex items-center justify-end gap-3">
+    <div className="bg-white border-t px-6 py-4 flex items-center gap-3">
+      {footerExtra && <div className="flex items-center gap-3">{footerExtra}</div>}
+      <div className="flex-1" />
       <Button variant="outline" onClick={onClose} disabled={isSaving}>
         {closeLabel}
       </Button>
