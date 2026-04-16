@@ -1,6 +1,6 @@
 -- =============================================
 -- Ministry Platform Database Install Script
--- Generated: 2026-04-16T15:53:13.399Z
+-- Generated: 2026-04-16T20:11:03.710Z
 -- Auto-generated - Do not edit manually
 -- =============================================
 -- NOTE: Run this script against your Ministry Platform database
