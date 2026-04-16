@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { ToolService } from '@/services/toolService';
 import { MPHelper } from '@/lib/providers/ministry-platform';
+import { validateGuid } from '@/lib/validation';
 
 export interface SelectionResult {
   recordIds: number[];
@@ -23,7 +24,7 @@ export async function resolveSelection(
   const mp = new MPHelper();
   const records = await mp.getTableRecords<{ User_ID: number }>({
     table: 'dp_Users',
-    filter: `User_GUID = '${userGuid}'`,
+    filter: `User_GUID = '${validateGuid(userGuid)}'`,
     select: 'User_ID',
     top: 1,
   });

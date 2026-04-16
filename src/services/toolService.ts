@@ -1,5 +1,6 @@
 import { MPHelper } from "@/lib/providers/ministry-platform";
 import { PageData } from "@/lib/tool-params";
+import { validatePositiveInt, validateColumnName } from "@/lib/validation";
 
 export interface ContactRecord {
   recordId: number;
@@ -183,6 +184,14 @@ export class ToolService {
   ): Promise<ContactRecordResult> {
     const envelope = { tableName, primaryKey, contactIdField };
 
+    validateColumnName(primaryKey);
+    validateColumnName(tableName);
+    if (contactIdField.includes('.')) {
+      contactIdField.split('.').forEach(validateColumnName);
+    } else {
+      validateColumnName(contactIdField);
+    }
+
     if (recordIds.length === 0) {
       return { ...envelope, records: [] };
     }
@@ -202,6 +211,7 @@ export class ToolService {
 
     for (let i = 0; i < recordIds.length; i += ToolService.BATCH_SIZE) {
       const batch = recordIds.slice(i, i + ToolService.BATCH_SIZE);
+      batch.forEach(validatePositiveInt);
       const rows = await this.mp!.getTableRecords<Record<string, number>>({
         table: tableName,
         select: `${primaryKey}, ${contactIdField}`,

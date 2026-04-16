@@ -33,7 +33,7 @@ vi.mock('@/lib/providers/ministry-platform', () => ({
 import { resolveSelection } from './selection-debug-actions';
 
 const validSession = {
-  user: { id: 'ba-1', userGuid: 'guid-abc' },
+  user: { id: 'ba-1', userGuid: '550e8400-e29b-41d4-a716-446655440000' },
   session: { id: 'sess-1' },
 };
 

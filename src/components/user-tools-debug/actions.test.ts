@@ -57,7 +57,7 @@ describe('getUserTools', () => {
 
   it('should throw when user not found in MP', async () => {
     mockGetSession.mockResolvedValueOnce({
-      user: { id: 'internal-id', userGuid: 'user-guid-123' },
+      user: { id: 'internal-id', userGuid: '550e8400-e29b-41d4-a716-446655440000' },
     });
     mockGetTableRecords.mockResolvedValueOnce([]);
 
@@ -66,7 +66,7 @@ describe('getUserTools', () => {
 
   it('should return tool paths when authenticated', async () => {
     mockGetSession.mockResolvedValueOnce({
-      user: { id: 'internal-id', userGuid: 'user-guid-123' },
+      user: { id: 'internal-id', userGuid: '550e8400-e29b-41d4-a716-446655440000' },
     });
     mockGetTableRecords.mockResolvedValueOnce([{ User_ID: 42 }]);
     mockGetUserTools.mockResolvedValueOnce(['/contacts', '/events']);
@@ -76,7 +76,7 @@ describe('getUserTools', () => {
     expect(mockGetTableRecords).toHaveBeenCalledWith(
       expect.objectContaining({
         table: 'dp_Users',
-        filter: "User_GUID = 'user-guid-123'",
+        filter: "User_GUID = '550e8400-e29b-41d4-a716-446655440000'",
       })
     );
     expect(mockGetUserTools).toHaveBeenCalledWith(42);

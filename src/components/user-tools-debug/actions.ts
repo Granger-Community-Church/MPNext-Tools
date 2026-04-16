@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { ToolService } from "@/services/toolService";
 import { MPHelper } from "@/lib/providers/ministry-platform";
+import { validateGuid } from "@/lib/validation";
 import { MPUserProfile } from "@/lib/providers/ministry-platform/types";
 
 export async function getUserTools(): Promise<string[]> {
@@ -21,7 +22,7 @@ export async function getUserTools(): Promise<string[]> {
   const mp = new MPHelper();
   const records = await mp.getTableRecords<MPUserProfile>({
     table: "dp_Users",
-    filter: `User_GUID = '${userGuid}'`,
+    filter: `User_GUID = '${validateGuid(userGuid)}'`,
     select: "User_ID",
     top: 1
   });

@@ -101,7 +101,7 @@ describe('fetchAddressLabels', () => {
   };
 
   beforeEach(() => {
-    mockGetSession.mockResolvedValue({ user: { id: 'user-1', userGuid: 'test-guid' } });
+    mockGetSession.mockResolvedValue({ user: { id: 'user-1', userGuid: '550e8400-e29b-41d4-a716-446655440000' } });
     // getMPUserId lookup — return a User_ID for the test guid
     mockMPGetTableRecords.mockResolvedValue([{ User_ID: 42 }]);
     mockGetSelectionRecordIds.mockReset();

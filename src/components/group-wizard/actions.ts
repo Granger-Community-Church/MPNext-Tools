@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { MPHelper } from '@/lib/providers/ministry-platform';
 import { GroupService } from '@/services/groupService';
+import { validateGuid } from '@/lib/validation';
 import type {
   GroupWizardLookups,
   ContactSearchResult,
@@ -27,7 +28,7 @@ async function getMPUserId(session: Awaited<ReturnType<typeof getSession>>): Pro
   const mp = new MPHelper();
   const records = await mp.getTableRecords<{ User_ID: number }>({
     table: 'dp_Users',
-    filter: `User_GUID = '${userGuid}'`,
+    filter: `User_GUID = '${validateGuid(userGuid)}'`,
     select: 'User_ID',
     top: 1,
   });

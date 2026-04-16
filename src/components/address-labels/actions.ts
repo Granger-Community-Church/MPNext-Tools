@@ -8,6 +8,7 @@ import { Packer } from 'docx';
 import { ToolService } from '@/services/toolService';
 import { AddressLabelService } from '@/services/addressLabelService';
 import { MPHelper } from '@/lib/providers/ministry-platform';
+import { validateGuid } from '@/lib/validation';
 import type { ContactAddressRow } from '@/services/addressLabelService';
 import type { ToolParams } from '@/lib/tool-params';
 import type {
@@ -38,7 +39,7 @@ async function getMPUserId(session: Awaited<ReturnType<typeof getSession>>): Pro
   const mp = new MPHelper();
   const records = await mp.getTableRecords<{ User_ID: number }>({
     table: 'dp_Users',
-    filter: `User_GUID = '${userGuid}'`,
+    filter: `User_GUID = '${validateGuid(userGuid)}'`,
     select: 'User_ID',
     top: 1,
   });
