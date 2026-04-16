@@ -1,0 +1,38 @@
+import { z } from 'zod';
+
+export const F1finaldonationsSchema = z.object({
+  "Transaction ID": z.string().max(255).nullable(),
+  "Giving Unit_ID": z.number().nullable(),
+  "Giving Unit Name": z.string().max(255).nullable(),
+  "Giving Unit_Last Name": z.string().max(255).nullable(),
+  Contributor_ID: z.number().nullable(),
+  "Contributor Name": z.string().max(255).nullable(),
+  "Contributor _Last Name": z.string().max(255).nullable(),
+  "Fund Code": z.string().max(255).nullable(),
+  Fund: z.string().max(255).nullable(),
+  "Fund Type": z.string().max(255).nullable(),
+  "SubFund Code": z.string().max(255).nullable(),
+  SubFund: z.string().max(255).nullable(),
+  "Fund Account Reference Desc": z.string().max(255).nullable(),
+  "General Ledger": z.string().max(255).nullable(),
+  "Originating Source": z.string().max(255).nullable(),
+  Frequency: z.string().max(255).nullable(),
+  Created_Date: z.string().datetime().nullable(),
+  Created_Time: z.string().datetime().nullable(),
+  Received_Date: z.string().datetime().nullable(),
+  Received_Time: z.string().datetime().nullable(),
+  "Transmit_ Date": z.number().nullable(),
+  "Last Updated_Date": z.number().nullable(),
+  Type: z.string().max(255).nullable(),
+  SubType: z.string().max(255).nullable(),
+  "Bank Card_Type": z.string().max(255).nullable(),
+  "Bank Card # Last 4": z.string().max(255).nullable(),
+  Reference: z.string().max(255).nullable(),
+  Amount: z.number().nullable(),
+  "Batch Variance": z.number().nullable(),
+  "True Value": z.string().max(255).nullable(),
+  "Liquidation Costs": z.string().max(255).nullable(),
+  Memo: z.string().max(2147483647).nullable(),
+});
+
+export type F1finaldonationsInput = z.infer<typeof F1finaldonationsSchema>;

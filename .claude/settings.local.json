@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --version:*)",
+      "Bash(sed:*)",
+      "Bash(node cleanup-models.js:*)",
+      "Bash(npm run build:*)",
+      "Bash(xargs grep:*)",
+      "Bash(ls:*)",
+      "Bash(npx tsc:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

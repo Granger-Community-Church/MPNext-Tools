@@ -1,0 +1,37 @@
+import { z } from 'zod';
+
+export const VwGccGuestFollowUpSchema = z.object({
+  Contact_ID: z.number().int(),
+  Display_Name: z.string().max(125).nullable(),
+  Nickname: z.string().max(50).nullable(),
+  Email_Address: z.string().email().max(254).nullable(),
+  Mobile_Phone: z.string().max(25).nullable(),
+  Gender: z.string().max(25).nullable(),
+  Age: z.number().int().nullable(),
+  Participant_Start_Date: z.string().datetime().nullable(),
+  Participant_Type: z.string().max(50),
+  First_Time_Guest_Response: z.string().datetime().nullable(),
+  Decision_For_Christ: z.string().datetime().nullable(),
+  Follow_Up_Status: z.string().max(50),
+  Spouse_Nickname: z.string().max(50).nullable(),
+  Spouse_Lastname: z.string().max(50).nullable(),
+  Spouse_Age: z.number().int().nullable(),
+  Spouse_Mobile: z.string().max(25).nullable(),
+  Spouse_Email: z.string().email().max(254).nullable(),
+  Last_Card_Date: z.string().max(4000).nullable(),
+  Last_Email_Date: z.string().max(4000).nullable(),
+  Last_Phone_Call_Date: z.string().max(4000).nullable(),
+  Congregation_Name: z.string().max(50).nullable(),
+  Home_Phone: z.string().max(25).nullable(),
+  Address_Line_1: z.string().max(75).nullable(),
+  Address_Line_2: z.string().max(75).nullable(),
+  City: z.string().max(50).nullable(),
+  "State/Region": z.string().max(50).nullable(),
+  Postal_Code: z.string().max(15).nullable(),
+  Congregation_ID: z.number().int().nullable(),
+  Household_ID: z.number().int(),
+  Participant_ID: z.number().int(),
+  Follow_Up_Status_ID: z.number().int().nullable(),
+});
+
+export type VwGccGuestFollowUpInput = z.infer<typeof VwGccGuestFollowUpSchema>;

@@ -1,0 +1,36 @@
+import { z } from 'zod';
+
+export const VwGccCoreTrackingSchema = z.object({
+  Contact_ID: z.number().int(),
+  Display_Name: z.string().max(125).nullable(),
+  Nickname: z.string().max(50).nullable(),
+  Current_Core_Group: z.string().max(75),
+  Last_Date: z.string().datetime().nullable(),
+  Last_Event: z.string().max(75).nullable(),
+  Next_Date: z.string().datetime().nullable(),
+  Next_Event: z.string().max(75).nullable(),
+  Core_101_Grad: z.string().datetime().nullable(),
+  Core_201_Grad: z.string().datetime().nullable(),
+  Core_301_Grad: z.string().datetime().nullable(),
+  Core_401_Grad: z.string().datetime().nullable(),
+  Core_101_Covenant: z.string().datetime().nullable(),
+  Core_201_Covenant: z.string().datetime().nullable(),
+  Core_301_Covenant: z.string().datetime().nullable(),
+  Contact_Status: z.string().max(50),
+  Participant_Type: z.string().max(50).nullable(),
+  Member_Status: z.string().max(50).nullable(),
+  Congregation_Name: z.string().max(50).nullable(),
+  Group_Life: z.boolean(),
+  __Is_Serving: z.boolean(),
+  __Is_Leading: z.boolean(),
+  Last_HH_Donation: z.string().datetime().nullable(),
+  Last_HH_Activity: z.string().datetime().nullable(),
+  Current_Core_Group_ID: z.number().int().nullable(),
+  Current_Core_Group_Start_Date: z.string().datetime().nullable(),
+  Current_Core_Group_End_Date: z.string().datetime().nullable(),
+  Participant_ID: z.number().int(),
+  Congregation_ID: z.number().int().nullable(),
+  User_Account: z.number().int().nullable(),
+});
+
+export type VwGccCoreTrackingInput = z.infer<typeof VwGccCoreTrackingSchema>;

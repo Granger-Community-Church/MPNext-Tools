@@ -1,0 +1,18 @@
+import { z } from 'zod';
+
+export const VwGccContactLogWithParticipantIdSchema = z.object({
+  Contact_Log_ID: z.number().int(),
+  Contact_ID: z.number().int(),
+  Participant_Record: z.number().int().nullable(),
+  Contact_Date: z.string().datetime(),
+  Contact_Log_Type_ID: z.number().int().nullable(),
+  Made_By: z.number().int(),
+  Notes: z.string().max(2000),
+  Planned_Contact_ID: z.number().int().nullable(),
+  Contact_Successful: z.boolean().nullable(),
+  Original_Contact_Log_Entry: z.number().int().nullable(),
+  Confidential_Notes: z.string().max(2000).nullable(),
+  Feedback_Entry_ID: z.number().int().nullable(),
+});
+
+export type VwGccContactLogWithParticipantIdInput = z.infer<typeof VwGccContactLogWithParticipantIdSchema>;

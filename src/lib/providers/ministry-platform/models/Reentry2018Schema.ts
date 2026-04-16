@@ -1,0 +1,36 @@
+import { z } from 'zod';
+
+export const Reentry2018Schema = z.object({
+  Last_Name: z.string().max(255).nullable(),
+  First_Name: z.string().max(255).nullable(),
+  Date_of_Birth: z.string().datetime().nullable(),
+  F4: z.string().max(255).nullable(),
+  F5: z.string().max(255).nullable(),
+  F6: z.string().max(255).nullable(),
+  F7: z.string().max(255).nullable(),
+  F8: z.string().max(255).nullable(),
+  F9: z.string().max(255).nullable(),
+  F10: z.string().max(255).nullable(),
+  F11: z.string().max(255).nullable(),
+  F12: z.string().max(255).nullable(),
+  F13: z.string().max(255).nullable(),
+  F14: z.string().max(255).nullable(),
+  F15: z.string().max(255).nullable(),
+  F16: z.string().max(255).nullable(),
+  F17: z.string().max(255).nullable(),
+  F18: z.string().max(255).nullable(),
+  F19: z.string().max(255).nullable(),
+  F20: z.string().max(255).nullable(),
+  F21: z.string().max(255).nullable(),
+  F22: z.string().max(255).nullable(),
+  F23: z.string().max(255).nullable(),
+  F24: z.string().max(255).nullable(),
+  F25: z.string().max(255).nullable(),
+  F26: z.string().max(255).nullable(),
+  F27: z.string().max(255).nullable(),
+  F28: z.string().max(255).nullable(),
+  F29: z.string().max(255).nullable(),
+  F30: z.string().max(255).nullable(),
+});
+
+export type Reentry2018Input = z.infer<typeof Reentry2018Schema>;
