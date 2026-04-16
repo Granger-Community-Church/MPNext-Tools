@@ -89,68 +89,78 @@ export function ContactRecordsDebug({ params, selectionRecordIds }: ContactRecor
   const remaining = result.records.length - displayIds.length;
 
   return (
-    <div className="bg-green-50 border-2 border-dashed border-green-300 rounded-lg p-4 mb-6">
-      <div className="flex items-start gap-3 mb-3">
-        <Users className="w-5 h-5 text-green-600 mt-0.5" />
-        <div className="flex-1">
-          <h3 className="font-semibold text-green-900 text-sm mb-1">
-            Development Mode - Contact Records
-          </h3>
-        </div>
-      </div>
+    <div className="bg-green-50 border-2 border-dashed border-green-300 rounded-lg mb-6">
+      <details className="group" open>
+        <summary className="flex items-center gap-3 p-4 cursor-pointer hover:bg-green-100 rounded-lg transition-colors">
+          <Users className="w-5 h-5 text-green-600" />
+          <div className="flex-1">
+            <h3 className="font-semibold text-green-900 text-sm">
+              Development Mode - Contact Records
+            </h3>
+            <p className="text-xs text-green-700 mt-0.5">
+              {result.records.length} contact{result.records.length !== 1 ? "s" : ""} resolved
+            </p>
+          </div>
+          <svg className="w-5 h-5 text-green-600 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </summary>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-        <div className="bg-white rounded border border-green-200 px-3 py-2">
-          <div className="text-xs font-mono text-gray-500 mb-1">Record Count</div>
-          <div className="text-sm font-medium text-green-900">{result.records.length}</div>
-        </div>
-        <div className="bg-white rounded border border-green-200 px-3 py-2">
-          <div className="text-xs font-mono text-gray-500 mb-1">Table</div>
-          <div className="text-sm font-medium text-green-900">{result.tableName}</div>
-        </div>
-        <div className="bg-white rounded border border-green-200 px-3 py-2">
-          <div className="text-xs font-mono text-gray-500 mb-1">Primary Key</div>
-          <div className="text-sm font-medium text-green-900">{result.primaryKey}</div>
-        </div>
-        <div className="bg-white rounded border border-green-200 px-3 py-2">
-          <div className="text-xs font-mono text-gray-500 mb-1">Contact_ID_Field</div>
-          <div className="text-sm font-medium text-green-900">{result.contactIdField}</div>
-        </div>
-      </div>
+        <div className="px-4 pb-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+            <div className="bg-white rounded border border-green-200 px-3 py-2">
+              <div className="text-xs font-mono text-gray-500 mb-1">Record Count</div>
+              <div className="text-sm font-medium text-green-900">{result.records.length}</div>
+            </div>
+            <div className="bg-white rounded border border-green-200 px-3 py-2">
+              <div className="text-xs font-mono text-gray-500 mb-1">Table</div>
+              <div className="text-sm font-medium text-green-900">{result.tableName}</div>
+            </div>
+            <div className="bg-white rounded border border-green-200 px-3 py-2">
+              <div className="text-xs font-mono text-gray-500 mb-1">Primary Key</div>
+              <div className="text-sm font-medium text-green-900">{result.primaryKey}</div>
+            </div>
+            <div className="bg-white rounded border border-green-200 px-3 py-2">
+              <div className="text-xs font-mono text-gray-500 mb-1">Contact_ID_Field</div>
+              <div className="text-sm font-medium text-green-900">{result.contactIdField}</div>
+            </div>
+          </div>
 
-      <div className="mb-3">
-        <div className="text-xs font-mono text-gray-500 mb-1">Contact IDs</div>
-        <div className="flex flex-wrap gap-1.5">
-          {displayIds.map((rec) => (
-            <span
-              key={rec.recordId}
-              className="inline-flex items-center bg-white border border-green-200 rounded px-2 py-0.5 text-xs font-mono text-green-900"
-            >
-              {rec.contactId}
-            </span>
-          ))}
-          {remaining > 0 && (
-            <span className="inline-flex items-center text-xs text-green-700">
-              +{remaining} more
-            </span>
-          )}
+          <div className="mb-3">
+            <div className="text-xs font-mono text-gray-500 mb-1">Contact IDs</div>
+            <div className="flex flex-wrap gap-1.5">
+              {displayIds.map((rec) => (
+                <span
+                  key={rec.recordId}
+                  className="inline-flex items-center bg-white border border-green-200 rounded px-2 py-0.5 text-xs font-mono text-green-900"
+                >
+                  {rec.contactId}
+                </span>
+              ))}
+              {remaining > 0 && (
+                <span className="inline-flex items-center text-xs text-green-700">
+                  +{remaining} more
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="pt-3 border-t border-green-200">
+            <details className="text-xs">
+              <summary className="cursor-pointer text-green-700 font-medium hover:text-green-900">
+                View Raw JSON
+              </summary>
+              <pre className="mt-2 bg-white p-3 rounded border border-green-200 overflow-x-auto text-xs">
+                {JSON.stringify(result, null, 2)}
+              </pre>
+            </details>
+          </div>
+
+          <p className="text-xs text-green-600 mt-3 italic">
+            💡 Remove this component before deploying to production
+          </p>
         </div>
-      </div>
-
-      <div className="pt-3 border-t border-green-200">
-        <details className="text-xs">
-          <summary className="cursor-pointer text-green-700 font-medium hover:text-green-900">
-            View Raw JSON
-          </summary>
-          <pre className="mt-2 bg-white p-3 rounded border border-green-200 overflow-x-auto text-xs">
-            {JSON.stringify(result, null, 2)}
-          </pre>
-        </details>
-      </div>
-
-      <p className="text-xs text-green-600 mt-3 italic">
-        💡 Remove this component before deploying to production
-      </p>
+      </details>
     </div>
   );
 }
