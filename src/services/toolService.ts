@@ -30,7 +30,7 @@ export class ToolService {
    * Initializes the service when instantiated
    */
   private constructor() {
-    this.initialize();
+    // Initialization is handled by getInstance()
   }
 
   /**

@@ -29,7 +29,7 @@ export class GroupService {
   private mp: MPHelper | null = null;
 
   private constructor() {
-    this.initialize();
+    // Initialization is handled by getInstance()
   }
 
   public static async getInstance(): Promise<GroupService> {
