@@ -349,6 +349,36 @@ Returns `ContactAddressRow | null`. Fetches the address for a single contact. Sa
 
 ---
 
+## FieldManagementService
+
+**File:** `src/services/fieldManagementService.ts`
+**Purpose:** Fetches Ministry Platform pages and their field configurations, and persists field-order changes. Backs the drag-and-drop field editor at `/tools/fieldmanagement`.
+
+### getPages()
+
+Calls `executeProcedureWithBody('api_MPNextTools_GetPages', {})`. Returns `PageListItem[]` (`Page_ID`, `Display_Name`, `Table_Name`). Returns `[]` on empty or missing result.
+
+### getPageFields(pageId: number)
+
+Calls `executeProcedureWithBody('api_MPNextTools_GetPageFields', { "@PageID": pageId })`. Returns `PageField[]` with field configuration including `View_Order`, `Group_Name`, `Required`, `Hidden`, `Default_Value`, `Filter_Clause`, `Depends_On_Field`, `Field_Label`, and `Writing_Assistant_Enabled`.
+
+### getTableMetadata(tableName: string)
+
+Calls `mp.getTables(tableName)`. Returns the exact-match `TableMetadata` (matched by `Table_Name`) or the first result if no exact match, or `null` when no tables are returned.
+
+### updatePageFieldOrder(fields)
+
+Persists an array of field config entries by calling `api_MPNextTools_UpdatePageFieldOrder` for each field. Uses a concurrency of **5** (`Promise.all` batches of 5) to avoid overwhelming the API.
+
+**Required stored procedures (defined in `src/lib/providers/ministry-platform/db/`):**
+- `api_MPNextTools_GetPages.sql`
+- `api_MPNextTools_GetPageFields.sql`
+- `api_MPNextTools_UpdatePageFieldOrder.sql`
+
+Each accepts `@DomainID INT` as the first parameter (MP API convention).
+
+---
+
 ## Server Actions
 
 Server actions validate the session, call service singletons, and return data to components.
@@ -434,6 +464,29 @@ Server actions validate the session, call service singletons, and return data to
 - Uses `docxtemplater` + image module for barcode embedding
 - Max template size: 5MB
 - Returns merged DOCX as base64
+
+### Field Management Actions
+
+**File:** `src/components/field-management/actions.ts`
+
+#### fetchPages()
+
+- Validates session
+- Calls `FieldManagementService.getInstance()` -> `getPages()`
+- Returns `PageListItem[]`
+
+#### fetchPageFieldData(pageId, tableName)
+
+- Validates session
+- Calls `getPageFields(pageId)` and `getTableMetadata(tableName)` in parallel via `Promise.all`
+- Merges any table columns not yet represented in `dp_Page_Fields` (skipping primary keys), assigning sequential `View_Order` values above the current max and **negative `Page_Field_ID`** values starting at `-1` (indicating "unsaved" rows)
+- Returns `PageFieldData` = `{ fields: PageField[]; tableMetadata: TableMetadata | null }`
+
+#### savePageFieldOrder(fields)
+
+- Wraps everything in try/catch — returns `{ success: false, error }` for any failure (including unauthorized)
+- Calls `FieldManagementService.updatePageFieldOrder(fields)` which batches 5-at-a-time
+- Returns `{ success: true }` on completion
 
 ### Template Editor Actions
 

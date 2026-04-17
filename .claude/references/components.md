@@ -36,6 +36,17 @@ src/components/
 │   ├── template-editor-form.tsx # Main editor orchestrator
 │   ├── types.ts                # Type definitions
 │   └── index.ts               # Barrel exports
+├── field-management/           # Page field ordering / inline editing (drag-and-drop)
+│   ├── actions.ts              # Server actions: fetchPages, fetchPageFieldData, savePageFieldOrder
+│   ├── actions.test.ts         # Action tests
+│   ├── field-order-editor.tsx  # Dnd-kit editor with grouped sortable fields
+│   ├── new-group-dialog.tsx    # Dialog for creating ad-hoc field groups
+│   ├── page-search.tsx         # Page selector with search
+│   ├── sortable-field-item.tsx # Individual draggable field row with inline edit
+│   ├── sortable-group.tsx      # Group container with drag handle
+│   ├── use-field-order-state.ts # Hook managing dirty state and field mutations
+│   ├── types.ts                # PageListItem, PageField, PageFieldData, FieldOrderPayload
+│   └── index.ts               # Barrel exports
 ├── group-wizard/               # Multi-step group creation/edit wizard
 │   ├── actions.ts              # Server actions for lookups, search, CRUD
 │   ├── contact-search.tsx      # Debounced contact search popover
@@ -71,6 +82,7 @@ src/components/
 | Folder | Purpose | Has Actions |
 |--------|---------|-------------|
 | `address-labels/` | Address label printing with IMb/POSTNET barcodes and mail merge | Yes |
+| `field-management/` | Drag-and-drop field ordering / inline config editing for MP pages | Yes |
 | `group-wizard/` | Multi-step group creation/edit wizard with 6 steps | Yes |
 | `template-editor/` | Visual email/document template editor with GrapesJS | Yes |
 | `user-menu/` | User dropdown with sign-out | Yes |

@@ -200,42 +200,77 @@ Coverage uses the **v8** provider. Auto-generated model files are excluded.
 npx vitest run --coverage --coverage.reportOnFailure
 ```
 
-## Test File Inventory (247 tests, 21 files)
+## Test File Inventory (442 tests, 34 files)
+
+### Ministry Platform provider (12 files)
 
 | Test File | Tests | What It Covers |
 |-----------|-------|----------------|
-| `lib/providers/ministry-platform/helper.test.ts` | 54 | MPHelper CRUD, Zod validation, procedures, files |
-| `lib/providers/ministry-platform/utils/http-client.test.ts` | 26 | HTTP methods, URL building, error handling |
-| `lib/providers/ministry-platform/services/table.service.test.ts` | 21 | TableService CRUD with query params, error codes |
-| `components/address-labels/actions.test.ts` | 14 | Address label server actions, fetch, skip logic |
+| `lib/providers/ministry-platform/helper.test.ts` | 65 | MPHelper CRUD, Zod validation, procedures, files, copy/recurrence/generateSequence |
+| `lib/providers/ministry-platform/provider.test.ts` | 25 | Singleton, service delegation, generateSequence with optional fields |
 | `lib/providers/ministry-platform/client.test.ts` | 12 | OAuth token lifecycle, refresh, concurrent calls |
+| `lib/providers/ministry-platform/utils/http-client.test.ts` | 27 | HTTP methods, URL building, FormData, error handling |
+| `lib/providers/ministry-platform/utils/logger.test.ts` | 3 | Debug vs production, error always logs |
+| `lib/providers/ministry-platform/auth/client-credentials.test.ts` | 5 | OAuth2 client_credentials token flow |
+| `lib/providers/ministry-platform/services/table.service.test.ts` | 22 | CRUD + copyRecord + copyRecordWithSubpages |
+| `lib/providers/ministry-platform/services/communication.service.test.ts` | 11 | Communications and messages with/without attachments |
+| `lib/providers/ministry-platform/services/domain.service.test.ts` | 6 | Domain info, global filters |
+| `lib/providers/ministry-platform/services/metadata.service.test.ts` | 6 | Metadata refresh, tables search |
+| `lib/providers/ministry-platform/services/procedure.service.test.ts` | 10 | Procedure listing + query/body execution with URL encoding |
+| `lib/providers/ministry-platform/services/file.service.test.ts` | 25 | File CRUD, FormData building, unauthenticated blob retrieval |
+
+### Services (6 files)
+
+| Test File | Tests | What It Covers |
+|-----------|-------|----------------|
 | `services/toolService.test.ts` | 17 | Page data, user tools, selection records, contact resolution |
-| `proxy.test.ts` | 11 | Route protection, public paths, session, errors |
-| `lib/barcode-helpers.test.ts` | 11 | Barcode generation utilities |
-| `auth.test.ts` | 11 | Name splitting, session structure, OAuth config |
-| `lib/imb-encoder.test.ts` | 10 | USPS Intelligent Mail barcode encoding |
-| `lib/providers/ministry-platform/provider.test.ts` | 9 | Singleton pattern, service delegation |
-| `lib/postnet-encoder.test.ts` | 9 | POSTNET barcode encoding |
-| `lib/label-stock.test.ts` | 9 | Label stock definitions and calculations |
+| `services/groupService.test.ts` | 14 | Group CRUD and membership (covered) |
+| `services/fieldManagementService.test.ts` | 17 | Pages, fields, table metadata, batched order updates |
 | `services/addressLabelService.test.ts` | 6 | Address fetching, batching, single contact |
-| `contexts/user-context.test.tsx` | 6 | UserProvider lifecycle, profile loading, errors |
-| `services/userService.test.ts` | 5 | Profile with roles/groups, parallel queries |
+| `services/userService.test.ts` | 9 | Profile with roles/groups, getUserIdByGuid, GUID validation |
+
+### Components (8 files)
+
+| Test File | Tests | What It Covers |
+|-----------|-------|----------------|
+| `components/address-labels/actions.test.ts` | 21 | PDF, DOCX, and template merge actions + error branches |
+| `components/field-management/actions.test.ts` | 15 | fetchPages / fetchPageFieldData column merge / savePageFieldOrder |
+| `components/address-labels/word-document.test.ts` | 8 | buildWordDocument page layout and barcode branches |
 | `components/tool/selection-debug-actions.test.ts` | 5 | Selection resolution server actions |
 | `components/user-tools-debug/actions.test.ts` | 4 | Authorization checks, session validation |
 | `components/user-menu/actions.test.ts` | 3 | Sign-out action, OIDC logout redirect |
-| `contexts/session-context.test.tsx` | 2 | useAppSession hook wrapper |
 | `components/shared-actions/user.test.ts` | 2 | getCurrentUserProfile delegation |
+
+### Core lib (8 files)
+
+| Test File | Tests | What It Covers |
+|-----------|-------|----------------|
+| `lib/validation.test.ts` | 17 | GUID / positive int / column name / filter escaping |
+| `lib/barcode-helpers.test.ts` | 11 | Barcode generation utilities |
+| `lib/imb-encoder.test.ts` | 10 | USPS Intelligent Mail barcode encoding |
+| `lib/postnet-encoder.test.ts` | 9 | POSTNET barcode encoding |
+| `lib/label-stock.test.ts` | 9 | Label stock definitions and calculations |
+| `lib/barcode-image.test.ts` | 6 | BMP rendering for IMb/POSTNET with JSON fallback |
+| `auth.test.ts` | 11 | Name splitting, session structure, OAuth config |
+| `proxy.test.ts` | 11 | Route protection, public paths, session, errors |
+
+### Contexts (2 files)
+
+| Test File | Tests | What It Covers |
+|-----------|-------|----------------|
+| `contexts/user-context.test.tsx` | 6 | UserProvider lifecycle, profile loading, errors |
+| `contexts/session-context.test.tsx` | 2 | useAppSession hook wrapper |
 
 ## Coverage (as of last run)
 
 | Metric | Value |
 |--------|-------|
-| Statements | 87.2% (634/727) |
-| Branches | 77.96% (230/295) |
-| Functions | 83.45% (111/133) |
-| Lines | 88.08% (606/688) |
+| Statements | 97.66% (1089/1115) |
+| Branches | 91.03% (447/491) |
+| Functions | 97.23% (211/217) |
+| Lines | 98.27% (1023/1041) |
 
 ## Known Issues
 
-1. **GroupService has no tests** — `src/services/groupService.ts` (252 lines, 6 methods) is the only service without test coverage. See `.claude/TODO/008-code-groupservice-no-tests.md`.
-2. **Lifecycle hooks not documented** — `afterEach()` is used in 5 test files and `afterAll()` in 1 file (user-menu/actions.test.ts) but not mentioned in the mock patterns section above. These are standard Vitest hooks for cleanup.
+- `src/lib/providers/ministry-platform/scripts/` (build-sql-install.ts, generate-types.ts) are intentionally untested — they are CLI-driven build scripts exercised by `npm run mp:build:install` and `npm run mp:generate:models`.
+- Generated model files under `src/lib/providers/ministry-platform/models/` are excluded from coverage via `vitest.config.ts`.

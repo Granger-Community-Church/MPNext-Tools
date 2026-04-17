@@ -345,5 +345,175 @@ describe('TableService', () => {
 
       expect(mockClient.ensureValidToken).toHaveBeenCalledTimes(4);
     });
+
+    it('should ensure valid token before copy operations', async () => {
+      (mockHttpClient.post as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+
+      const pattern = {
+        Type: 'Weekly' as const,
+        Interval: 1,
+        StartDate: '2026-01-01',
+      };
+
+      await tableService.copyRecord('Events', 1, pattern);
+      await tableService.copyRecordWithSubpages('Events', 1, { Pattern: pattern });
+
+      expect(mockClient.ensureValidToken).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('copyRecord', () => {
+    it('should post to /copy endpoint with pattern as body', async () => {
+      const pattern = {
+        Type: 'Weekly' as const,
+        Interval: 1,
+        StartDate: '2026-01-01T09:00:00',
+        TotalOccurrences: 3,
+      };
+      const copiedRecords = [
+        { Event_ID: 2 },
+        { Event_ID: 3 },
+        { Event_ID: 4 },
+      ];
+
+      (mockHttpClient.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce(copiedRecords);
+
+      const result = await tableService.copyRecord('Events', 1, pattern);
+
+      expect(mockHttpClient.post).toHaveBeenCalledWith(
+        '/tables/Events/1/copy',
+        pattern,
+        undefined
+      );
+      expect(result).toEqual(copiedRecords);
+    });
+
+    it('should URL-encode table name with special characters', async () => {
+      const pattern = {
+        Type: 'Daily' as const,
+        Interval: 1,
+        StartDate: '2026-01-01',
+      };
+
+      (mockHttpClient.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce([]);
+
+      await tableService.copyRecord('My Table', 42, pattern);
+
+      expect(mockHttpClient.post).toHaveBeenCalledWith(
+        '/tables/My%20Table/42/copy',
+        pattern,
+        undefined
+      );
+    });
+
+    it('should pass $select and $userId query params', async () => {
+      const pattern = {
+        Type: 'Weekly' as const,
+        Interval: 1,
+        StartDate: '2026-01-01',
+      };
+
+      (mockHttpClient.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce([]);
+
+      await tableService.copyRecord('Events', 1, pattern, {
+        $select: 'Event_ID,Event_Title',
+        $userId: 99,
+      });
+
+      expect(mockHttpClient.post).toHaveBeenCalledWith(
+        '/tables/Events/1/copy',
+        pattern,
+        { $select: 'Event_ID,Event_Title', $userId: 99 }
+      );
+    });
+
+    it('should propagate errors from post', async () => {
+      const pattern = {
+        Type: 'Weekly' as const,
+        Interval: 1,
+        StartDate: '2026-01-01',
+      };
+
+      (mockHttpClient.post as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+        new Error('POST /tables/Events/1/copy failed: 400 Bad Request')
+      );
+
+      await expect(
+        tableService.copyRecord('Events', 1, pattern)
+      ).rejects.toThrow('400 Bad Request');
+    });
+  });
+
+  describe('copyRecordWithSubpages', () => {
+    it('should post to /copy-record endpoint with copyParams body', async () => {
+      const copyParams = {
+        Pattern: {
+          Type: 'Weekly' as const,
+          Interval: 1,
+          StartDate: '2026-01-01T09:00:00',
+          TotalOccurrences: 2,
+        },
+        SubpageIds: [298],
+        UpdateOriginalRecord: true,
+        CopyFiles: false,
+      };
+      const copiedRecords = [{ Event_ID: 2 }, { Event_ID: 3 }];
+
+      (mockHttpClient.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce(copiedRecords);
+
+      const result = await tableService.copyRecordWithSubpages('Events', 1, copyParams);
+
+      expect(mockHttpClient.post).toHaveBeenCalledWith(
+        '/tables/Events/1/copy-record',
+        copyParams,
+        undefined
+      );
+      expect(result).toEqual(copiedRecords);
+    });
+
+    it('should handle nested Pattern with SubpageIds', async () => {
+      const copyParams = {
+        Pattern: {
+          Type: 'Monthly' as const,
+          Interval: 1,
+          StartDate: '2026-01-01',
+          Day: 15,
+          TotalOccurrences: 6,
+        },
+        SubpageIds: [100, 200, 300],
+        UpdateOriginalRecord: false,
+        CopyFiles: true,
+      };
+
+      (mockHttpClient.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce([]);
+
+      await tableService.copyRecordWithSubpages('Events', 99, copyParams, {
+        $userId: 1,
+      });
+
+      expect(mockHttpClient.post).toHaveBeenCalledWith(
+        '/tables/Events/99/copy-record',
+        copyParams,
+        { $userId: 1 }
+      );
+    });
+
+    it('should propagate errors from post', async () => {
+      const copyParams = {
+        Pattern: {
+          Type: 'Weekly' as const,
+          Interval: 1,
+          StartDate: '2026-01-01',
+        },
+      };
+
+      (mockHttpClient.post as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+        new Error('POST /tables/Events/1/copy-record failed: 500 Server Error')
+      );
+
+      await expect(
+        tableService.copyRecordWithSubpages('Events', 1, copyParams)
+      ).rejects.toThrow('500 Server Error');
+    });
   });
 });
