@@ -344,4 +344,139 @@ describe('mergeTemplate', () => {
     expect(result.success).toBe(false);
     if (!result.success) expect(result.error).toContain('5MB');
   });
+
+  it('returns error wrapped for template tag mismatch', async () => {
+    mockDocxtemplaterRender.mockImplementationOnce(() => {
+      throw new Error('Unclosed tag in template');
+    });
+
+    const labels: LabelData[] = [{ name: 'T', addressLine1: 'A', city: 'C', state: 'S', postalCode: '12345' }];
+    const result = await mergeTemplate(Buffer.from('x').toString('base64'), labels, mergeConfig);
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error).toContain('Template error');
+  });
+
+  it('returns generic error message when non-tag error is thrown', async () => {
+    mockDocxtemplaterRender.mockImplementationOnce(() => {
+      throw new Error('some other failure');
+    });
+
+    const labels: LabelData[] = [{ name: 'T', addressLine1: 'A', city: 'C', state: 'S', postalCode: '12345' }];
+    const result = await mergeTemplate(Buffer.from('x').toString('base64'), labels, mergeConfig);
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error).toBe('some other failure');
+  });
+
+  it('returns fallback error string for non-Error throws', async () => {
+    mockDocxtemplaterRender.mockImplementationOnce(() => {
+      throw 'non-error-value';
+    });
+
+    const labels: LabelData[] = [{ name: 'T', addressLine1: 'A', city: 'C', state: 'S', postalCode: '12345' }];
+    const result = await mergeTemplate(Buffer.from('x').toString('base64'), labels, mergeConfig);
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error).toBe('Template merge failed');
+  });
+
+  it('handles labels without barcodes (no barcode key added)', async () => {
+    const labels: LabelData[] = [{ name: 'NoBars', addressLine1: '1 A', city: 'C', state: 'S', postalCode: '12345' }];
+    // Override preEncodeBarcodes to NOT set barStates/barType
+    const { preEncodeBarcodes } = await import('@/lib/barcode-helpers');
+    (preEncodeBarcodes as unknown as { mockImplementationOnce: (fn: unknown) => void }).mockImplementationOnce(
+      (ls: LabelData[]) => ls
+    );
+
+    const result = await mergeTemplate(Buffer.from('x').toString('base64'), labels, mergeConfig);
+    expect(result.success).toBe(true);
+  });
+
+  it('uses IMB barcode encoder when barType=imb', async () => {
+    const labels: LabelData[] = [{ name: 'Imb', addressLine1: '1 A', city: 'C', state: 'S', postalCode: '12345' }];
+    const { preEncodeBarcodes } = await import('@/lib/barcode-helpers');
+    (preEncodeBarcodes as unknown as { mockImplementationOnce: (fn: unknown) => void }).mockImplementationOnce(
+      (ls: LabelData[]) => ls.map((l) => ({ ...l, barStates: 'TDAF', barType: 'imb' as const }))
+    );
+
+    const result = await mergeTemplate(Buffer.from('x').toString('base64'), labels, mergeConfig);
+    expect(result.success).toBe(true);
+  });
+});
+
+describe('generateLabelDocx', () => {
+  const docxConfig: LabelConfig = {
+    stockId: '5160',
+    addressMode: 'household',
+    startPosition: 1,
+    includeMissingBarcodes: true,
+    barcodeFormat: 'postnet',
+    mailerId: '',
+    serviceType: '040',
+  };
+
+  beforeEach(() => {
+    mockGetSession.mockResolvedValue({ user: { id: 'user-1' } });
+  });
+
+  it('returns a base64 docx buffer on success', async () => {
+    const { generateLabelDocx } = await import('./actions');
+    const labels: LabelData[] = [{
+      name: 'Docx', addressLine1: '1 Docx Rd', city: 'Town', state: 'TX', postalCode: '75001',
+    }];
+
+    const result = await generateLabelDocx(labels, docxConfig);
+    expect(result.success).toBe(true);
+    if (result.success) expect(typeof result.data).toBe('string');
+  });
+
+  it('returns error for unknown stock id', async () => {
+    const { generateLabelDocx } = await import('./actions');
+    const labels: LabelData[] = [{
+      name: 'Docx', addressLine1: '1 Docx Rd', city: 'Town', state: 'TX', postalCode: '75001',
+    }];
+
+    const result = await generateLabelDocx(labels, { ...docxConfig, stockId: 'nope' });
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error).toContain('Unknown label stock');
+  });
+
+  it('returns error when labels array is empty', async () => {
+    const { generateLabelDocx } = await import('./actions');
+    const result = await generateLabelDocx([], docxConfig);
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error).toContain('No labels to export');
+  });
+});
+
+describe('generateLabelPdf error branches', () => {
+  const pdfConfig: LabelConfig = {
+    stockId: '5160',
+    addressMode: 'household',
+    startPosition: 1,
+    includeMissingBarcodes: true,
+    barcodeFormat: 'postnet',
+    mailerId: '',
+    serviceType: '040',
+  };
+
+  beforeEach(() => {
+    mockGetSession.mockResolvedValue({ user: { id: 'user-1' } });
+  });
+
+  it('returns error when toBlob rejects with an Error', async () => {
+    mockToBlob.mockRejectedValueOnce(new Error('pdf render failed'));
+
+    const labels: LabelData[] = [{ name: 'Test', addressLine1: '1', city: 'C', state: 'S', postalCode: '12345' }];
+    const result = await generateLabelPdf(labels, pdfConfig);
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error).toBe('pdf render failed');
+  });
+
+  it('returns fallback message when toBlob rejects with non-Error', async () => {
+    mockToBlob.mockRejectedValueOnce('string-err');
+
+    const labels: LabelData[] = [{ name: 'Test', addressLine1: '1', city: 'C', state: 'S', postalCode: '12345' }];
+    const result = await generateLabelPdf(labels, pdfConfig);
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error).toBe('PDF generation failed');
+  });
 });

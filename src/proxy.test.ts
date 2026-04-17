@@ -23,7 +23,10 @@ vi.mock('better-auth/cookies', () => ({
 
 // Mock NextResponse since next/server may not work in test env
 const { mockNext, mockRedirect } = vi.hoisted(() => ({
-  mockNext: vi.fn(() => ({ type: 'next' })),
+  mockNext: vi.fn((init?: { request?: { headers?: Headers } }) => ({
+    type: 'next',
+    headers: init?.request?.headers,
+  })),
   mockRedirect: vi.fn((url: URL) => ({ type: 'redirect', url })),
 }));
 
@@ -42,6 +45,7 @@ function createMockRequest(pathname: string, baseUrl = 'http://localhost:3000') 
   return {
     nextUrl: url,
     url: url.toString(),
+    headers: new Headers(),
   } as unknown as NextRequest;
 }
 
@@ -146,6 +150,39 @@ describe('proxy', () => {
       const redirectUrl = mockRedirect.mock.calls[0][0] as URL;
       expect(redirectUrl.pathname).toBe('/signin');
       expect(redirectUrl.searchParams.get('callbackUrl')).toBe('/tools/template?recordID=789');
+    });
+  });
+
+  describe('x-pathname forwarding', () => {
+    it('should forward x-pathname header on public paths', async () => {
+      const request = createMockRequest('/api/auth/session?x=1');
+
+      await proxy(request);
+
+      const init = mockNext.mock.calls[0][0] as { request?: { headers?: Headers } };
+      expect(init?.request?.headers?.get('x-pathname')).toBe('/api/auth/session?x=1');
+    });
+
+    it('should forward x-pathname header when session cookie exists', async () => {
+      const request = createMockRequest('/tools/addresslabels?s=123&pageID=456');
+      mockGetSessionCookie.mockReturnValueOnce('session-token-value');
+
+      await proxy(request);
+
+      const init = mockNext.mock.calls[0][0] as { request?: { headers?: Headers } };
+      expect(init?.request?.headers?.get('x-pathname')).toBe(
+        '/tools/addresslabels?s=123&pageID=456'
+      );
+    });
+
+    it('should not set x-pathname when redirecting (only next() passes headers)', async () => {
+      const request = createMockRequest('/tools/template?s=1');
+      mockGetSessionCookie.mockReturnValueOnce(null);
+
+      await proxy(request);
+
+      expect(mockNext).not.toHaveBeenCalled();
+      expect(mockRedirect).toHaveBeenCalled();
     });
   });
 

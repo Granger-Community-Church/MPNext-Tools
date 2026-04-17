@@ -356,6 +356,21 @@ describe('HttpClient', () => {
       );
       expect(result).toEqual({ FileId: 1, FileName: 'updated.txt' });
     });
+
+    it('should throw error on failed PUT FormData request', async () => {
+      const formData = new FormData();
+      formData.append('file', new Blob(['data']), 'fail.txt');
+
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        statusText: 'Bad Request',
+      });
+
+      await expect(httpClient.putFormData('/files/1', formData)).rejects.toThrow(
+        'PUT /files/1 failed: 400 Bad Request'
+      );
+    });
   });
 
   describe('DELETE Requests', () => {
