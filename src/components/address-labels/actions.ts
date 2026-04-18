@@ -20,6 +20,7 @@ import { LabelDocument } from './label-document';
 import { buildWordDocument } from './word-document';
 import { getLabelStock } from '@/lib/label-stock';
 import { preEncodeBarcodes } from '@/lib/barcode-helpers';
+import { validateMailerId } from '@/lib/validation';
 import Docxtemplater from 'docxtemplater';
 import PizZip from 'pizzip';
 import ImageModule from 'docxtemplater-image-module-free';
@@ -148,6 +149,17 @@ export async function generateLabelPdf(
     return { success: false, error: 'No labels to print' };
   }
 
+  if (config.barcodeFormat === 'imb' && config.mailerId) {
+    try {
+      validateMailerId(config.mailerId);
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Invalid Mailer ID',
+      };
+    }
+  }
+
   try {
     const labelsWithBars = preEncodeBarcodes(labels, config);
 
@@ -190,6 +202,17 @@ export async function generateLabelDocx(
     return { success: false, error: 'No labels to export' };
   }
 
+  if (config.barcodeFormat === 'imb' && config.mailerId) {
+    try {
+      validateMailerId(config.mailerId);
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Invalid Mailer ID',
+      };
+    }
+  }
+
   try {
     const labelsWithBars = preEncodeBarcodes(labels, config);
 
@@ -224,6 +247,17 @@ export async function mergeTemplate(
   const templateSize = Math.ceil(templateBase64.length * 0.75);
   if (templateSize > MAX_TEMPLATE_SIZE) {
     return { success: false, error: 'Template file exceeds 5MB limit' };
+  }
+
+  if (config.barcodeFormat === 'imb' && config.mailerId) {
+    try {
+      validateMailerId(config.mailerId);
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Invalid Mailer ID',
+      };
+    }
   }
 
   try {

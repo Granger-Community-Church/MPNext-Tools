@@ -1,6 +1,7 @@
 import { MPHelper } from "@/lib/providers/ministry-platform";
 import { PageData } from "@/lib/tool-params";
 import { validatePositiveInt, validateColumnName } from "@/lib/validation";
+import { MP_FETCH_BATCH_SIZE } from "@/lib/constants";
 
 export interface ContactRecord {
   recordId: number;
@@ -280,8 +281,6 @@ export class ToolService {
     };
   }
 
-  private static readonly BATCH_SIZE = 100;
-
   /**
    * Resolves record IDs to their associated Contact IDs by querying the
    * specified table. Supports direct columns and FK traversal paths
@@ -329,8 +328,8 @@ export class ToolService {
 
     const allRecords: ContactRecord[] = [];
 
-    for (let i = 0; i < recordIds.length; i += ToolService.BATCH_SIZE) {
-      const batch = recordIds.slice(i, i + ToolService.BATCH_SIZE);
+    for (let i = 0; i < recordIds.length; i += MP_FETCH_BATCH_SIZE) {
+      const batch = recordIds.slice(i, i + MP_FETCH_BATCH_SIZE);
       batch.forEach(validatePositiveInt);
       const rows = await this.mp!.getTableRecords<Record<string, number>>({
         table: tableName,

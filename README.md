@@ -50,7 +50,7 @@ A Ministry Platform page tools application powered by Next.js 16, React 19, Bett
 - **REST API Client**: Six specialized services covering tables, procedures, communications, files, metadata, and domain operations
 - **Type Generation**: CLI tool to generate TypeScript interfaces and Zod v4 schemas from MP database schema
 - **Validation**: Optional Zod v4 runtime validation in MPHelper before API calls
-- **Testing**: 241 test cases across 21 files with Vitest 4.1
+- **Testing**: 621 test cases across 43 files with Vitest 4.1 (see `.claude/references/_meta/facts/` for the authoritative snapshot)
 - **Setup Wizard**: Interactive CLI setup with environment configuration, dependency management, and build verification
 
 ## Architecture
@@ -607,7 +607,7 @@ Server Action -> Service.getInstance() -> MPHelper -> Ministry Platform API
 - **Framework**: Vitest 4.1 with jsdom environment
 - **Libraries**: @testing-library/react, @testing-library/jest-dom
 - **Coverage**: v8 provider
-- **Total**: **241 test cases across 21 test files**
+- **Total**: **621 test cases across 43 test files** (authoritative snapshot: `.claude/references/_meta/facts/`)
 
 ### Running Tests
 

@@ -1,5 +1,6 @@
 import { imbEncode } from '@/lib/imb-encoder';
 import { postnetEncode } from '@/lib/postnet-encoder';
+import { validateMailerId } from '@/lib/validation';
 import type { LabelData, LabelConfig } from '@/lib/dto';
 
 /**
@@ -19,6 +20,7 @@ export function buildRoutingCode(postalCode?: string, deliveryPointCode?: string
  * Format: [Barcode ID: 2][Service Type: 3][Mailer ID: 6 or 9][Serial: 9 or 6]
  */
 export function buildImbTrackingCode(mailerId: string, serviceType: string, serialNumber: number): string {
+  validateMailerId(mailerId);
   const barcodeId = '00';
   const serialLength = mailerId.length === 6 ? 9 : 6;
   const serial = String(serialNumber).padStart(serialLength, '0');
