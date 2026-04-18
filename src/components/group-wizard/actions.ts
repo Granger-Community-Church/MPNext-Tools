@@ -50,13 +50,20 @@ export async function searchGroups(term: string): Promise<GroupSearchResult[]> {
 
 export async function fetchGroupRecord(
   groupId: number,
-): Promise<{ success: true; data: GroupWizardFormData } | ActionError> {
+): Promise<
+  | {
+      success: true;
+      data: GroupWizardFormData;
+      displayNames: { contacts: Record<number, string>; groups: Record<number, string> };
+    }
+  | ActionError
+> {
   try {
     await getSession();
     const service = await GroupService.getInstance();
     const group = await service.getGroup(groupId);
     if (!group) return { success: false, error: 'Group not found' };
-    return { success: true, data: group };
+    return { success: true, data: group.data, displayNames: group.displayNames };
   } catch (error) {
     return { success: false, error: error instanceof Error ? error.message : 'Failed to load group' };
   }
