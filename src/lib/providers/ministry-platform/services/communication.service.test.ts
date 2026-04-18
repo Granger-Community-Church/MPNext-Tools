@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { CommunicationService } from '@/lib/providers/ministry-platform/services/communication.service';
 import type { MinistryPlatformClient } from '@/lib/providers/ministry-platform/client';
 import type { HttpClient } from '@/lib/providers/ministry-platform/utils/http-client';
+import type { CommunicationInfo, MessageInfo } from '@/lib/providers/ministry-platform/types';
 
 describe('CommunicationService', () => {
   let service: CommunicationService;
@@ -33,23 +34,26 @@ describe('CommunicationService', () => {
     vi.restoreAllMocks();
   });
 
-  const communicationInfo = {
-    Author_User_ID: 1,
+  const communicationInfo: CommunicationInfo = {
+    AuthorUserId: 1,
     Subject: 'Test',
     Body: '<p>Body</p>',
-    Start_Date: '2024-01-01',
-    From_Contact: 123,
-    Reply_to_Contact: 123,
-    To_Contact_List: '456',
-  } as any;
+    StartDate: '2024-01-01',
+    FromContactId: 123,
+    ReplyToContactId: 123,
+    Contacts: [456],
+    CommunicationType: 'Email',
+    IsBulkEmail: false,
+    SendToContactParents: false,
+  };
 
-  const messageInfo = {
+  const messageInfo: MessageInfo = {
     FromAddress: { Address: 'sender@example.com', DisplayName: 'Sender' },
-    ReplyToAddress: { Address: 'sender@example.com' },
-    ToAddresses: [{ Address: 'recipient@example.com' }],
+    ReplyToAddress: { Address: 'sender@example.com', DisplayName: 'Sender' },
+    ToAddresses: [{ Address: 'recipient@example.com', DisplayName: 'Recipient' }],
     Subject: 'Hello',
     Body: '<p>Body</p>',
-  } as any;
+  };
 
   describe('createCommunication', () => {
     it('should call post without attachments', async () => {
