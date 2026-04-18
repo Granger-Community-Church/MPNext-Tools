@@ -93,6 +93,8 @@ export class AddressLabelService {
    * Fetch the address for a single contact. Returns null if not found.
    */
   async getAddressForContact(contactId: number): Promise<ContactAddressRow | null> {
+    validatePositiveInt(contactId);
+
     const rows = await this.mp!.getTableRecords<ContactAddressRow>({
       table: 'Contacts',
       select: SELECT_FIELDS,
