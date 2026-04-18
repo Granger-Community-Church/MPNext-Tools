@@ -14,7 +14,7 @@ All open TODOs dropped during the context-engineering review (2026-04-17) and an
 - **medium**: doc drift, missing test, refactor with real cost
 - **low**: nits, minor doc fixes, stylistic improvements
 
-Total: **31 open TODOs**.
+Total: **30 open TODOs**.
 
 ---
 
@@ -42,13 +42,12 @@ _none open_
 | utils | bug, refactor | IMb encoding errors silently fall back to POSTNET | [→](2026-04-17-utils-imb-fallback-silent.md) |
 | utils | missing-test | Missing test file for `tool-params.ts` | [→](2026-04-17-utils-tool-params-missing-test.md) |
 
-### Low (19)
+### Low (18)
 | Area | Tags | Title | File |
 |---|---|---|---|
 | auth | — | auth — oauth-flow.md references a missing PKCE TODO file | [→](2026-04-17-verify-auth-oauth-flow.md) |
 | components | bug, refactor | Household dedup silently skipped when `Household_ID` is null | [→](2026-04-17-components-address-labels-no-household-dedup-null-id.md) |
 | components | missing-test, drift | POSTNET barcode test uses malformed input | [→](2026-04-17-components-address-labels-weak-postnet-test.md) |
-| components | missing-test | No render/interaction test for `UserMenu` | [→](2026-04-17-components-user-menu-missing-render-test.md) |
 | components | refactor | `ui/dialog.tsx` mixes direct assignment and forwardRef patterns | [→](2026-04-17-components-framework-dialog-forwardref-inconsistency.md) |
 | components | security, refactor | Dev-panel non-deploy server actions lack `NODE_ENV` guard | [→](2026-04-17-components-dev-panel-prod-guard-gap.md) |
 | contexts | refactor, doc | Rename `session-context.tsx` — it's a hook module, not a Context | [→](2026-04-17-contexts-session-context-misnamed.md) |
@@ -80,12 +79,11 @@ _see severity sections above; tag appears on items involving a functional defect
 ### drift (8)
 _doc-to-code or doc-to-doc divergence; mostly resolved inline by Phase 4 verification_
 
-### missing-test (7)
+### missing-test (6)
 - components-group-wizard-missing-tests — medium
 - components-template-editor-missing-tests — medium
 - utils-tool-params-missing-test — medium
 - components-address-labels-weak-postnet-test — low
-- components-user-menu-missing-render-test — low
 - mp-provider-services-communication-fixture-shape-mismatch — low
 
 ### refactor (13)
@@ -104,7 +102,7 @@ _documentation-only tasks, mostly retiring old flat files or updating CLAUDE.md 
 
 | Area | Count |
 |---|---|
-| components | 10 |
+| components | 9 |
 | auth | 1 |
 | mp-provider | 5 |
 | services | 4 |
