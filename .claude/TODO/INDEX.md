@@ -1,7 +1,7 @@
 ---
 title: TODO Index
 type: index
-last_updated: 2026-04-17
+last_updated: 2026-04-18
 ---
 
 # TODO Index
@@ -13,7 +13,7 @@ All open TODOs dropped during the context-engineering review (2026-04-17) and an
 - **medium**: doc drift, missing test, refactor with real cost
 - **low**: nits, minor doc fixes, stylistic improvements
 
-Total: **37 open TODOs** at baseline.
+Total: **34 open TODOs**.
 
 ---
 
@@ -25,10 +25,9 @@ _none open_
 ### High
 _none open_
 
-### Medium (12)
+### Medium (11)
 | Area | Tags | Title | File |
 |---|---|---|---|
-| auth | doc, drift | Retire flat `.claude/references/auth.md` | [→](2026-04-17-auth-retire-flat-auth-md.md) |
 | auth | missing-test | No test coverage for `/signin` page OAuth redirect | [→](2026-04-17-auth-missing-signin-page-test.md) |
 | components | bug, drift | Template editor ignores pageID/recordID (no MP persistence) | [→](2026-04-17-components-template-editor-no-mp-persistence.md) |
 | components | bug, refactor | Merge tokens `{{Field_Name}}` have no resolver anywhere | [→](2026-04-17-components-template-editor-merge-token-resolver.md) |
@@ -45,12 +44,11 @@ _none open_
 | utils | bug, refactor | IMb encoding errors silently fall back to POSTNET | [→](2026-04-17-utils-imb-fallback-silent.md) |
 | utils | missing-test | Missing test file for `tool-params.ts` | [→](2026-04-17-utils-tool-params-missing-test.md) |
 
-### Low (21)
+### Low (19)
 | Area | Tags | Title | File |
 |---|---|---|---|
 | auth | — | auth — oauth-flow.md references a missing PKCE TODO file | [→](2026-04-17-verify-auth-oauth-flow.md) |
 | components | bug, refactor | Household dedup silently skipped when `Household_ID` is null | [→](2026-04-17-components-address-labels-no-household-dedup-null-id.md) |
-| components | drift, doc | Retire flat `.claude/references/components.md` | [→](2026-04-17-components-framework-retire-flat-components-md.md) |
 | components | missing-test, drift | POSTNET barcode test uses malformed input | [→](2026-04-17-components-address-labels-weak-postnet-test.md) |
 | components | missing-test | No render/interaction test for `UserMenu` | [→](2026-04-17-components-user-menu-missing-render-test.md) |
 | components | refactor | `ui/dialog.tsx` mixes direct assignment and forwardRef patterns | [→](2026-04-17-components-framework-dialog-forwardref-inconsistency.md) |
@@ -67,7 +65,6 @@ _none open_
 | routing | refactor, perf | `/home` redirect page sits inside `(web)`, forces auth roundtrip | [→](2026-04-17-routing-home-page-unnecessary-auth-roundtrip.md) |
 | services | doc, drift | `getSelectionRecordIds` JSDoc references wrong SP name | [→](2026-04-17-services-stale-cloudtools-comment.md) |
 | services | drift, doc | (duplicate of above — dev-panel-toolservice-comment-drift) | [→](2026-04-17-components-dev-panel-toolservice-comment-drift.md) |
-| testing | doc, drift | Remove or redirect stale flat `testing.md` | [→](2026-04-17-testing-remove-stale-flat-doc.md) |
 | utils | bug | `parseToolParams` leaks `NaN` for non-numeric query params | [→](2026-04-17-utils-tool-params-parseint-nan.md) |
 
 ---
@@ -82,7 +79,7 @@ _none open_
 ### bug (13)
 _see severity sections above; tag appears on items involving a functional defect_
 
-### drift (13)
+### drift (10)
 _doc-to-code or doc-to-doc divergence; mostly resolved inline by Phase 4 verification_
 
 ### missing-test (8)
@@ -97,7 +94,7 @@ _doc-to-code or doc-to-doc divergence; mostly resolved inline by Phase 4 verific
 ### refactor (13)
 _improvements with real value but no functional defect_
 
-### doc (11)
+### doc (8)
 _documentation-only tasks, mostly retiring old flat files or updating CLAUDE.md / README.md_
 
 ### perf (2)
@@ -110,14 +107,14 @@ _documentation-only tasks, mostly retiring old flat files or updating CLAUDE.md 
 
 | Area | Count |
 |---|---|
-| components | 13 |
-| auth | 3 |
+| components | 12 |
+| auth | 2 |
 | mp-provider | 5 |
 | services | 4 |
 | utils | 3 |
 | routing | 3 |
 | mp-schema | 1 |
-| testing | 1 |
+| testing | 0 |
 | contexts | 1 |
 | dto-constants | 2 |
 | doc (cross-cutting) | 1 |

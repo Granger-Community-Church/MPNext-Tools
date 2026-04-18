@@ -11,10 +11,10 @@ status: open
 ---
 
 ## Problem
-`src/components/ui/dialog.tsx` uses a mix of direct assignment (function + variable) and `React.forwardRef` patterns for its parts, while sibling shadcn primitives (`tooltip.tsx`, `popover.tsx`, etc.) consistently use a single simpler pattern (plain function components typed via `React.ComponentProps<typeof RadixPart>`). This was flagged as a known inconsistency in the pre-existing flat `components.md` ("Known Issues & Recommendations") and has not been cleaned up.
+`src/components/ui/dialog.tsx` uses a mix of direct assignment (function + variable) and `React.forwardRef` patterns for its parts, while sibling shadcn primitives (`tooltip.tsx`, `popover.tsx`, etc.) consistently use a single simpler pattern (plain function components typed via `React.ComponentProps<typeof RadixPart>`). This has been flagged as a known inconsistency in the components reference and has not been cleaned up.
 
 ## Evidence
-- Pre-existing note: `.claude/references/components.md` line 180 — "dialog.tsx: Uses mixed patterns (direct assignment vs forwardRef) - works but inconsistent."
+- `.claude/references/components/ui.md:86` — "dialog.tsx mixes patterns. It uses both direct assignment and `forwardRef` in places — works, but inconsistent with the rest."
 - Sibling files use plain functions: `src/components/ui/tooltip.tsx:8-15`, `21-29`, `31-35`, `37-59`
 
 ## Proposed fix

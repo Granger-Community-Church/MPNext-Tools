@@ -734,10 +734,10 @@ Uses calver format: `v{YYYY}.{MM}.{DD}.{HHmm}`. Categorizes PRs as features, fix
 | **[CLAUDE.md](CLAUDE.md)** | Development guide — commands, architecture, code style, testing patterns |
 | **[Ministry Platform Provider](src/lib/providers/ministry-platform/docs/README.md)** | Complete REST API client documentation |
 | **[Type Generator](src/lib/providers/ministry-platform/scripts/README.md)** | CLI tool for generating TypeScript types from MP schema |
-| **[Auth Reference](.claude/references/auth.md)** | Better Auth config, OAuth flow, session access, userGuid vs user.id |
-| **[Components Reference](.claude/references/components.md)** | Component inventory with compliance status |
-| **[Services Reference](.claude/references/services.md)** | Service layer docs, MP query patterns, DTOs |
-| **[Testing Reference](.claude/references/testing.md)** | Vitest patterns, mock setup, coverage data |
+| **[Auth Reference](.claude/references/auth/README.md)** | Better Auth config, OAuth flow, session access, userGuid vs user.id |
+| **[Components Reference](.claude/references/components/README.md)** | Component inventory with compliance status |
+| **[Services Reference](.claude/references/services/README.md)** | Service layer docs, MP query patterns, DTOs |
+| **[Testing Reference](.claude/references/testing/README.md)** | Vitest patterns, mock setup, coverage data |
 | **[MP Schema Reference](.claude/references/ministryplatform.schema.md)** | Auto-generated database schema (436 tables) |
 | **[MP Stored Procedures](.claude/references/ministryplatform.storedprocs.md)** | Auto-generated stored procedure reference |
 
