@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { z } from 'zod';
-import { MPHelper } from '@/lib/providers/ministry-platform/helper';
+import { MPHelper, MPValidationError } from '@/lib/providers/ministry-platform/helper';
 
 /**
  * MPHelper Tests
@@ -249,6 +249,48 @@ describe('MPHelper', () => {
       await expect(
         mpHelper.createTableRecords('Test', records, { schema: Schema })
       ).rejects.toThrow('Validation failed for record 1');
+
+      // Also verify: the thrown error preserves the structured ZodError so
+      // callers can render per-field UI feedback without string-parsing.
+      try {
+        await mpHelper.createTableRecords('Test', records, { schema: Schema });
+        throw new Error('expected createTableRecords to reject');
+      } catch (err) {
+        expect(err).toBeInstanceOf(MPValidationError);
+        expect(err).toBeInstanceOf(Error); // subclass — existing catches still work
+        const mpErr = err as MPValidationError;
+        expect(mpErr.recordIndex).toBe(1);
+        expect(mpErr.zodError).toBeInstanceOf(z.ZodError);
+        expect(Array.isArray(mpErr.zodError.issues)).toBe(true);
+        expect(mpErr.zodError.issues.length).toBeGreaterThan(0);
+        expect(mpErr.zodError.issues[0]).toHaveProperty('path');
+        expect(mpErr.zodError.issues[0]).toHaveProperty('code');
+      }
+    });
+
+    it('should throw MPValidationError with populated issues from update-path', async () => {
+      const Schema = z.object({
+        Contact_ID: z.number(),
+        Email: z.string().email(),
+      });
+
+      const records = [
+        { Contact_ID: 1, Email: 'not-an-email' }, // Invalid email
+      ];
+
+      try {
+        await mpHelper.updateTableRecords('Contacts', records, {
+          schema: Schema,
+          partial: false,
+        });
+        throw new Error('expected updateTableRecords to reject');
+      } catch (err) {
+        expect(err).toBeInstanceOf(MPValidationError);
+        const mpErr = err as MPValidationError;
+        expect(mpErr.recordIndex).toBe(0);
+        expect(mpErr.zodError).toBeInstanceOf(z.ZodError);
+        expect(mpErr.zodError.issues.length).toBeGreaterThan(0);
+      }
     });
 
     it('should pass $select parameter with validation', async () => {

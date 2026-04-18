@@ -17,7 +17,27 @@ import {
   RecurrencePattern,
   CopyParameters,
 } from "./types";
-import type { ZodObject, ZodRawShape } from "zod";
+import { z, type ZodObject, type ZodRawShape } from "zod";
+
+/**
+ * Error thrown by MPHelper when per-record Zod validation fails inside
+ * `createTableRecords` / `updateTableRecords`. Preserves the original
+ * `z.ZodError` so callers (e.g. field-level form UIs) can inspect the
+ * structured `issues` array instead of re-parsing the message string.
+ *
+ * Subclasses `Error`, so existing `instanceof Error` / catch-all handlers
+ * continue to work — callers that want field-level detail can additionally
+ * check `instanceof MPValidationError`.
+ */
+export class MPValidationError extends Error {
+  constructor(
+    public readonly recordIndex: number,
+    public readonly zodError: z.ZodError
+  ) {
+    super(`Validation failed for record ${recordIndex}: ${zodError.message}`);
+    this.name = "MPValidationError";
+  }
+}
 
 /**
  * MPHelper - Main Public API for Ministry Platform Operations
@@ -186,6 +206,10 @@ export class MPHelper {
           try {
             return schema.parse(record) as T;
           } catch (validationError) {
+            // Preserve the structured ZodError for downstream consumers.
+            if (validationError instanceof z.ZodError) {
+              throw new MPValidationError(index, validationError);
+            }
             throw new Error(
               `Validation failed for record ${index}: ${
                 validationError instanceof Error
@@ -270,6 +294,10 @@ export class MPHelper {
           try {
             return validationSchema.parse(record) as T;
           } catch (validationError) {
+            // Preserve the structured ZodError for downstream consumers.
+            if (validationError instanceof z.ZodError) {
+              throw new MPValidationError(index, validationError);
+            }
             throw new Error(
               `Validation failed for record ${index}: ${
                 validationError instanceof Error
