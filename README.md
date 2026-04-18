@@ -26,6 +26,7 @@ A Ministry Platform page tools application powered by Next.js 16, React 19, Bett
 - [Project Structure](#project-structure)
 - [Tools](#tools)
   - [Address Labels](#address-labels)
+  - [Field Management](#field-management)
   - [Template Editor](#template-editor)
   - [Template Tool](#template-tool)
   - [Building Custom Tools](#building-custom-tools)
@@ -274,6 +275,7 @@ MPNext-Tools/
 │   │   │   ├── tools/                    # Tools section
 │   │   │   │   ├── layout.tsx            # Full-height gray background
 │   │   │   │   ├── addresslabels/        # Address label printing tool
+│   │   │   │   ├── fieldmanagement/      # MP page field layout editor
 │   │   │   │   ├── template/             # Template tool (scaffold/demo)
 │   │   │   │   └── templateeditor/       # Visual template editor
 │   │   │   └── layout.tsx                # Auth + Providers wrapper
@@ -284,6 +286,7 @@ MPNext-Tools/
 │   │
 │   ├── components/                       # React components
 │   │   ├── address-labels/               # Address label printing & mail merge
+│   │   ├── field-management/             # Drag-and-drop MP page field order editor
 │   │   ├── layout/                       # AuthWrapper (server component)
 │   │   ├── shared-actions/               # Cross-feature server actions
 │   │   ├── template-editor/              # GrapesJS template editor
@@ -394,6 +397,32 @@ A visual email/document template editor built with GrapesJS for creating and edi
 - `EditorImportDialog` — Template import dialog
 - `EditorExportDialog` — Template export dialog
 - `MergeFieldPicker` — MP merge field selection
+
+### Field Management
+
+**Route**: `/tools/fieldmanagement`
+
+A drag-and-drop editor for configuring Ministry Platform page field layout — reorder fields, assign groups, and toggle per-field flags (required, hidden, writing-assistant) without touching the MP UI.
+
+**Features:**
+- Searchable page picker sourced from `dp_Pages`
+- Drag-and-drop reordering within and across field groups
+- Inline editing for label, default value, filter clause, depends-on field, and writing-assistant toggle
+- Create new groups on the fly
+- Auto-merges table columns not yet present in `dp_Page_Fields` so new columns can be added to a page layout
+
+**Components** (`src/components/field-management/`):
+- `PageSearch` — Searchable page picker
+- `FieldOrderEditor` — Main drag-and-drop editor surface
+- `SortableGroup` — Droppable group container
+- `SortableFieldItem` — Draggable field row with inline flag editors
+- `NewGroupDialog` — Create a new field group
+- `useFieldOrderState` — State hook for field order/edits
+
+**Stored procedures:**
+- `api_MPNextTools_GetPages` — List configurable pages
+- `api_MPNextTools_GetPageFields` — Fetch current `dp_Page_Fields` rows for a page
+- `api_MPNextTools_UpdatePageFieldOrder` — Upsert field order and per-field flags
 
 ### Template Tool
 
@@ -546,6 +575,7 @@ Alert, Alert Dialog, Avatar, Badge, Breadcrumb, Button, Card, Checkbox, Command,
 ### Feature Components
 
 - **address-labels/** — 12 components for address label printing, barcode generation, and mail merge
+- **field-management/** — Drag-and-drop editor for MP page field order and flags (`PageSearch`, `FieldOrderEditor`, sortable group/field items, `useFieldOrderState`)
 - **template-editor/** — 12 components for visual template editing with GrapesJS
 - **user-menu/** — User dropdown with profile display and OIDC sign-out action
 - **dev-panel/** — Unified developer overlay (localhost-only) showing parsed URL params, MP selection data, contact records, and authorized tools
@@ -776,6 +806,7 @@ import { useUser, useAppSession } from '@/contexts';
 ```
 src/components/
 ├── address-labels/       # Address label printing & mail merge (12 files)
+├── field-management/     # Drag-and-drop MP page field order editor
 ├── layout/               # AuthWrapper
 ├── shared-actions/       # Cross-feature server actions
 ├── template-editor/      # Visual template editor (12 files)

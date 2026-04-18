@@ -14,7 +14,7 @@ All open TODOs dropped during the context-engineering review (2026-04-17) and an
 - **medium**: doc drift, missing test, refactor with real cost
 - **low**: nits, minor doc fixes, stylistic improvements
 
-Total: **33 open TODOs**.
+Total: **31 open TODOs**.
 
 ---
 
@@ -26,14 +26,12 @@ _none open_
 ### High
 _none open_
 
-### Medium (10)
+### Medium (12)
 | Area | Tags | Title | File |
 |---|---|---|---|
 | components | bug, drift | Template editor ignores pageID/recordID (no MP persistence) | [→](2026-04-17-components-template-editor-no-mp-persistence.md) |
 | components | bug, refactor | Merge tokens `{{Field_Name}}` have no resolver anywhere | [→](2026-04-17-components-template-editor-merge-token-resolver.md) |
 | components | bug | Group wizard edit mode does not seed contact/group display maps | [→](2026-04-17-components-group-wizard-display-map-edit-mode.md) |
-| components | drift, doc | CLAUDE.md Component Organization omits `field-management/` | [→](2026-04-17-components-field-management-claudemd-missing.md) |
-| components | drift, doc | README.md Tools section omits Field Management tool | [→](2026-04-17-components-field-management-readme-missing.md) |
 | components | missing-test | group-wizard has no component or action tests | [→](2026-04-17-components-group-wizard-missing-tests.md) |
 | components | missing-test | No tests for `src/components/template-editor/` | [→](2026-04-17-components-template-editor-missing-tests.md) |
 | mp-provider | refactor, perf | `ensureValidToken` has no concurrent-call deduplication | [→](2026-04-17-mp-provider-token-refresh-no-dedup.md) |
@@ -79,7 +77,7 @@ _none open_
 ### bug (13)
 _see severity sections above; tag appears on items involving a functional defect_
 
-### drift (10)
+### drift (8)
 _doc-to-code or doc-to-doc divergence; mostly resolved inline by Phase 4 verification_
 
 ### missing-test (7)
@@ -93,7 +91,7 @@ _doc-to-code or doc-to-doc divergence; mostly resolved inline by Phase 4 verific
 ### refactor (13)
 _improvements with real value but no functional defect_
 
-### doc (8)
+### doc (6)
 _documentation-only tasks, mostly retiring old flat files or updating CLAUDE.md / README.md_
 
 ### perf (2)
@@ -106,7 +104,7 @@ _documentation-only tasks, mostly retiring old flat files or updating CLAUDE.md 
 
 | Area | Count |
 |---|---|
-| components | 12 |
+| components | 10 |
 | auth | 1 |
 | mp-provider | 5 |
 | services | 4 |
