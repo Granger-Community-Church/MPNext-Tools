@@ -3,11 +3,21 @@ import { getSessionCookie } from 'better-auth/cookies';
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const fullPath = pathname + request.nextUrl.search;
+
+  // Forward the original URL (pathname + search) to downstream server
+  // components via a request header, so AuthWrapper (and anything else
+  // that needs to redirect to /signin) can build a correct callbackUrl
+  // even when the proxy itself lets the request through.
+  const forwardedHeaders = new Headers(request.headers);
+  forwardedHeaders.set('x-pathname', fullPath);
+  const passThrough = () =>
+    NextResponse.next({ request: { headers: forwardedHeaders } });
 
   // Early returns for public paths
   if (pathname.startsWith('/api') || pathname === '/signin') {
     console.log(`Proxy: Allowing public path ${pathname}`);
-    return NextResponse.next();
+    return passThrough();
   }
 
   try {
@@ -16,17 +26,17 @@ export async function proxy(request: NextRequest) {
     if (!sessionCookie) {
       console.log("Proxy: Redirecting to signin - no session cookie");
       const signinUrl = new URL('/signin', request.url);
-      signinUrl.searchParams.set('callbackUrl', pathname + request.nextUrl.search);
+      signinUrl.searchParams.set('callbackUrl', fullPath);
       return NextResponse.redirect(signinUrl);
     }
 
     console.log(`Proxy: Allowing request to ${pathname}`);
-    return NextResponse.next();
+    return passThrough();
 
   } catch (error) {
     console.error('Proxy: Error checking session:', error);
     const signinUrl = new URL('/signin', request.url);
-    signinUrl.searchParams.set('callbackUrl', pathname + request.nextUrl.search);
+    signinUrl.searchParams.set('callbackUrl', fullPath);
     return NextResponse.redirect(signinUrl);
   }
 }

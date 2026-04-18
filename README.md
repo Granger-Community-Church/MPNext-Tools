@@ -5,8 +5,12 @@
 [![codecov](https://codecov.io/gh/MinistryPlatform-Community/MPNext-Tools/graph/badge.svg)](https://codecov.io/gh/MinistryPlatform-Community/MPNext-Tools)
 
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-6.0-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![shadcn/ui](https://img.shields.io/badge/shadcn%2Fui-new--york-000000?logo=shadcnui&logoColor=white)](https://ui.shadcn.com/)
+[![Radix UI](https://img.shields.io/badge/Radix_UI-primitives-161618?logo=radixui&logoColor=white)](https://www.radix-ui.com/)
+[![Lucide](https://img.shields.io/badge/Lucide-icons-F56565?logo=lucide&logoColor=white)](https://lucide.dev/)
 
 A Ministry Platform page tools application powered by Next.js 16, React 19, Better Auth, and a comprehensive Ministry Platform REST API integration with TypeScript and Zod validation.
 
@@ -283,10 +287,10 @@ MPNext-Tools/
 │   │   ├── layout/                       # AuthWrapper (server component)
 │   │   ├── shared-actions/               # Cross-feature server actions
 │   │   ├── template-editor/              # GrapesJS template editor
-│   │   ├── tool/                         # Tool framework (Container, Header, Footer, ParamsDebug, SelectionDebug)
+│   │   ├── tool/                         # Tool framework (Container, Header, Footer)
 │   │   ├── ui/                           # 22 shadcn/ui components
 │   │   ├── user-menu/                    # User dropdown with OIDC sign-out
-│   │   └── user-tools-debug/             # Dev helper: authorized tool paths
+│   │   └── dev-panel/                    # Unified dev panel (localhost-only)
 │   │
 │   ├── contexts/                         # React Context providers
 │   │   ├── user-context.tsx              # UserProvider (MP profile + roles)
@@ -423,7 +427,6 @@ Or manually:
 1. Copy the `template` folder to create your new tool directory
 2. Rename files and components
 3. Implement your logic inside the `ToolContainer`
-4. Remove `ToolParamsDebug` and `UserToolsDebug` before production
 
 **URL Parameter Utilities** (`src/lib/tool-params.ts`):
 - `parseToolParams(searchParams)` — Parses and fetches page metadata
@@ -536,18 +539,16 @@ Alert, Alert Dialog, Avatar, Badge, Breadcrumb, Button, Card, Checkbox, Command,
 
 ### Tool Framework (`src/components/tool/`)
 
-- **ToolContainer** — Full-screen flex layout with header, scrollable content, and footer actions
+- **ToolContainer** — Full-screen flex layout with header, scrollable content, and footer actions. Automatically renders `DevPanel` above the title bar on localhost (NODE_ENV=development only).
 - **ToolHeader** — Dark slate title bar with optional info tooltip
 - **ToolFooter** — Close/Save action buttons with loading state
-- **ToolParamsDebug** — Development helper showing parsed URL parameters (remove before production)
-- **SelectionDebug** — Development helper for debugging MP selection data
 
 ### Feature Components
 
 - **address-labels/** — 12 components for address label printing, barcode generation, and mail merge
 - **template-editor/** — 12 components for visual template editing with GrapesJS
 - **user-menu/** — User dropdown with profile display and OIDC sign-out action
-- **user-tools-debug/** — Development helper showing authorized tool paths (remove before production)
+- **dev-panel/** — Unified developer overlay (localhost-only) showing parsed URL params, MP selection data, contact records, and authorized tools
 - **shared-actions/** — Cross-feature server actions (`getCurrentUserProfile`)
 
 All components use kebab-case file naming, PascalCase component names, and named exports with barrel index files.
@@ -600,10 +601,10 @@ npm run test:coverage # With coverage report
 | Provider | `provider.test.ts` | Singleton pattern, service delegation |
 | Proxy | `proxy.test.ts` | Route protection, public paths, session cookie checks |
 | Tool Service | `toolService.test.ts` | Page data, user tools, stored procedure calls |
-| Selection Debug | `selection-debug-actions.test.ts` | Selection resolution server actions |
+| Selection Panel | `selection-actions.test.ts` | Selection resolution server actions |
 | User Context | `user-context.test.tsx` | UserProvider lifecycle, profile loading, error handling |
 | User Service | `userService.test.ts` | Profile with roles/groups, parallel queries |
-| User Tools Debug | `actions.test.ts` | Authorization checks, session validation |
+| User Tools Panel | `user-tools-actions.test.ts` | Authorization checks, session validation |
 | User Menu | `actions.test.ts` | Sign-out action, OIDC logout redirect |
 | Shared Actions | `user.test.ts` | getCurrentUserProfile delegation |
 | Session Context | `session-context.test.tsx` | useAppSession hook wrapper |
@@ -749,7 +750,7 @@ Use the `@/*` path alias for all internal imports:
 import { MPHelper } from '@/lib/providers/ministry-platform';
 import { Button } from '@/components/ui/button';
 import { AuthWrapper } from '@/components/layout';
-import { ToolContainer, SelectionDebug } from '@/components/tool';
+import { ToolContainer } from '@/components/tool';
 import { useUser, useAppSession } from '@/contexts';
 ```
 
@@ -778,10 +779,10 @@ src/components/
 ├── layout/               # AuthWrapper
 ├── shared-actions/       # Cross-feature server actions
 ├── template-editor/      # Visual template editor (12 files)
-├── tool/                 # Tool framework (Container, Header, Footer, ParamsDebug, SelectionDebug)
+├── tool/                 # Tool framework (Container, Header, Footer)
 ├── ui/                   # shadcn/ui components (22)
 ├── user-menu/            # User dropdown + sign-out action
-└── user-tools-debug/     # Dev authorization helper
+└── dev-panel/            # Unified dev panel (localhost-only)
 ```
 
 ### Best Practices

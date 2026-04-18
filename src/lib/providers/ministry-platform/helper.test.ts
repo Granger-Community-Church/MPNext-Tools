@@ -42,6 +42,11 @@ const mockGetFileContentByUniqueId = vi.fn();
 const mockGetFileMetadata = vi.fn();
 const mockGetFileMetadataByUniqueId = vi.fn();
 
+// Copy/Recurrence/Sequence mocks
+const mockCopyRecord = vi.fn();
+const mockCopyRecordWithSubpages = vi.fn();
+const mockGenerateSequence = vi.fn();
+
 vi.mock('@/lib/providers/ministry-platform/provider', () => ({
   MinistryPlatformProvider: {
     getInstance: vi.fn(() => ({
@@ -68,6 +73,10 @@ vi.mock('@/lib/providers/ministry-platform/provider', () => ({
       getFileContentByUniqueId: mockGetFileContentByUniqueId,
       getFileMetadata: mockGetFileMetadata,
       getFileMetadataByUniqueId: mockGetFileMetadataByUniqueId,
+      // Copy/Recurrence/Sequence
+      copyRecord: mockCopyRecord,
+      copyRecordWithSubpages: mockCopyRecordWithSubpages,
+      generateSequence: mockGenerateSequence,
     })),
   },
 }));
@@ -570,6 +579,31 @@ describe('MPHelper', () => {
         mpHelper.createTableRecords('Test', records, { schema: Schema })
       ).rejects.toThrow('Validation failed for record 1');
     });
+
+    it('stringifies non-Error throws in create validation', async () => {
+      const throwingSchema = {
+        parse: () => {
+          throw 'plain-string-failure';
+        },
+      } as unknown as z.ZodObject<z.ZodRawShape>;
+
+      await expect(
+        mpHelper.createTableRecords('Test', [{ x: 1 }], { schema: throwingSchema })
+      ).rejects.toThrow('plain-string-failure');
+    });
+
+    it('stringifies non-Error throws in update validation', async () => {
+      const throwingSchema = {
+        parse: () => {
+          throw 'plain-string-update-failure';
+        },
+        partial: () => throwingSchema,
+      } as unknown as z.ZodObject<z.ZodRawShape>;
+
+      await expect(
+        mpHelper.updateTableRecords('Test', [{ x: 1 }], { schema: throwingSchema })
+      ).rejects.toThrow('plain-string-update-failure');
+    });
   });
 
   describe('Procedure Service Methods', () => {
@@ -934,6 +968,141 @@ describe('MPHelper', () => {
           mpHelper.getFileMetadata({ fileId: 99999 })
         ).rejects.toThrow('File not found');
       });
+    });
+  });
+
+  describe('Copy/Recurrence/Sequence Methods', () => {
+    it('should delegate copyRecord to provider with all arguments', async () => {
+      const pattern = {
+        Type: 'Weekly' as const,
+        Interval: 2,
+        StartDate: '2026-04-09T18:30:00',
+        Weekdays: 'Thursday' as const,
+        TotalOccurrences: 6,
+      };
+      const copied = [{ Event_ID: 2 }, { Event_ID: 3 }];
+      mockCopyRecord.mockResolvedValueOnce(copied);
+
+      const result = await mpHelper.copyRecord('Events', 190793, pattern, {
+        $userId: 42,
+      });
+
+      expect(mockCopyRecord).toHaveBeenCalledWith('Events', 190793, pattern, {
+        $userId: 42,
+      });
+      expect(result).toEqual(copied);
+    });
+
+    it('should pass undefined params when omitted from copyRecord', async () => {
+      const pattern = {
+        Type: 'Daily' as const,
+        Interval: 1,
+        StartDate: '2026-01-01',
+      };
+      mockCopyRecord.mockResolvedValueOnce([]);
+
+      await mpHelper.copyRecord('Events', 1, pattern);
+
+      expect(mockCopyRecord).toHaveBeenCalledWith('Events', 1, pattern, undefined);
+    });
+
+    it('should propagate errors from copyRecord', async () => {
+      const pattern = {
+        Type: 'Weekly' as const,
+        Interval: 1,
+        StartDate: '2026-01-01',
+      };
+      mockCopyRecord.mockRejectedValueOnce(new Error('Copy failed'));
+
+      await expect(
+        mpHelper.copyRecord('Events', 1, pattern)
+      ).rejects.toThrow('Copy failed');
+    });
+
+    it('should delegate copyRecordWithSubpages to provider with all arguments', async () => {
+      const copyParams = {
+        Pattern: {
+          Type: 'Weekly' as const,
+          Interval: 1,
+          StartDate: '2026-09-06T09:00:00',
+          Weekdays: 'Sunday' as const,
+          TotalOccurrences: 4,
+        },
+        SubpageIds: [298],
+        UpdateOriginalRecord: true,
+        CopyFiles: false,
+      };
+      const copied = [{ Event_ID: 2 }];
+      mockCopyRecordWithSubpages.mockResolvedValueOnce(copied);
+
+      const result = await mpHelper.copyRecordWithSubpages('Events', 190793, copyParams, {
+        $select: 'Event_ID,Event_Title',
+      });
+
+      expect(mockCopyRecordWithSubpages).toHaveBeenCalledWith(
+        'Events',
+        190793,
+        copyParams,
+        { $select: 'Event_ID,Event_Title' }
+      );
+      expect(result).toEqual(copied);
+    });
+
+    it('should pass undefined params when omitted from copyRecordWithSubpages', async () => {
+      const copyParams = {
+        Pattern: {
+          Type: 'Daily' as const,
+          Interval: 1,
+          StartDate: '2026-01-01',
+        },
+      };
+      mockCopyRecordWithSubpages.mockResolvedValueOnce([]);
+
+      await mpHelper.copyRecordWithSubpages('Events', 1, copyParams);
+
+      expect(mockCopyRecordWithSubpages).toHaveBeenCalledWith(
+        'Events',
+        1,
+        copyParams,
+        undefined
+      );
+    });
+
+    it('should delegate generateSequence to provider with pattern', async () => {
+      const pattern = {
+        Type: 'Weekly' as const,
+        Interval: 2,
+        StartDate: '2026-04-09T18:30:00',
+        Weekdays: 'Thursday' as const,
+        TotalOccurrences: 3,
+      };
+      const dates = [
+        '2026-04-09T18:30:00',
+        '2026-04-23T18:30:00',
+        '2026-05-07T18:30:00',
+      ];
+      mockGenerateSequence.mockResolvedValueOnce(dates);
+
+      const result = await mpHelper.generateSequence(pattern);
+
+      expect(mockGenerateSequence).toHaveBeenCalledWith(pattern);
+      expect(result).toEqual(dates);
+    });
+
+    it('should return string array from generateSequence', async () => {
+      const pattern = {
+        Type: 'Daily' as const,
+        Interval: 1,
+        StartDate: '2026-01-01',
+        TotalOccurrences: 2,
+      };
+      mockGenerateSequence.mockResolvedValueOnce(['2026-01-01', '2026-01-02']);
+
+      const result = await mpHelper.generateSequence(pattern);
+
+      expect(Array.isArray(result)).toBe(true);
+      expect(result.every((d) => typeof d === 'string')).toBe(true);
+      expect(result).toHaveLength(2);
     });
   });
 });
