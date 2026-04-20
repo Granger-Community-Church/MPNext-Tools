@@ -1,8 +1,3 @@
-export interface ParticipationStatus {
-  Participation_Status_ID: number;
-  Participation_Status: string;
-}
-
 export interface RegistrationEvent {
   Event_ID: number;
   Event_Title: string;

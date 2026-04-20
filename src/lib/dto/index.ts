@@ -11,7 +11,16 @@ export type {
 export { SERVICE_TYPES } from './address-label.dto';
 
 export type {
+  EventSummary,
+  EventParticipantRow,
   ParticipationStatus,
+  NametagLayout,
+  NametagConfig,
+  NametagData,
+  StatusUpdatePayload,
+} from './event-checkin.dto';
+
+export type {
   RegistrationEvent,
   RegistrationParticipant,
   ProductOptionGroup,
