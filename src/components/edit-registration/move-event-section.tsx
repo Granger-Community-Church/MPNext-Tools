@@ -229,7 +229,9 @@ export function MoveEventSection({
           <SelectItem value="none">Keep in current event</SelectItem>
           {targetEvents.map((e) => (
             <SelectItem key={e.Event_ID} value={e.Event_ID.toString()}>
-              {e.Event_Title} &mdash; {formatEventDate(e.Event_Start_Date)}
+              {e.Event_Title}
+              {e.Congregation_Name ? ` (${e.Congregation_Name})` : ''} &mdash;{' '}
+              {formatEventDate(e.Event_Start_Date)}
             </SelectItem>
           ))}
         </SelectContent>

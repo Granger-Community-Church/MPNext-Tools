@@ -44,7 +44,8 @@ export class EditRegistrationService {
   async getRegistrationEvent(eventId: number): Promise<RegistrationEvent | null> {
     const rows = await this.mp.getTableRecords<RegistrationEvent>({
       table: 'Events',
-      select: 'Event_ID, Event_Title, Event_Start_Date, Online_Registration_Product, Registration_Form, Program_ID',
+      select:
+        'Event_ID, Event_Title, Event_Start_Date, Online_Registration_Product, Registration_Form, Program_ID, Congregation_ID_TABLE.Congregation_Name',
       filter: `Event_ID = ${eventId}`,
       top: 1,
     });
@@ -120,30 +121,43 @@ export class EditRegistrationService {
   async updateParticipationStatus(
     eventParticipantId: number,
     participationStatusId: number,
+    userId: number,
   ): Promise<void> {
-    await this.mp.updateTableRecords('Event_Participants', [
-      {
-        Event_Participant_ID: eventParticipantId,
-        Participation_Status_ID: participationStatusId,
-      },
-    ]);
+    await this.mp.updateTableRecords(
+      'Event_Participants',
+      [
+        {
+          Event_Participant_ID: eventParticipantId,
+          Participation_Status_ID: participationStatusId,
+        },
+      ],
+      { $userId: userId },
+    );
   }
 
   async updateInvoiceDetailOption(
     invoiceDetailId: number,
     productOptionPriceId: number,
     lineTotal: number,
+    userId: number,
   ): Promise<void> {
-    await this.mp.updateTableRecords('Invoice_Detail', [
-      {
-        Invoice_Detail_ID: invoiceDetailId,
-        Product_Option_Price_ID: productOptionPriceId,
-        Line_Total: lineTotal,
-      },
-    ]);
+    await this.mp.updateTableRecords(
+      'Invoice_Detail',
+      [
+        {
+          Invoice_Detail_ID: invoiceDetailId,
+          Product_Option_Price_ID: productOptionPriceId,
+          Line_Total: lineTotal,
+        },
+      ],
+      { $userId: userId },
+    );
   }
 
-  async recalculateInvoiceTotal(invoiceId: number): Promise<{
+  async recalculateInvoiceTotal(
+    invoiceId: number,
+    userId: number,
+  ): Promise<{
     newTotal: number;
     totalPaid: number;
     invoiceGuid: string;
@@ -188,18 +202,27 @@ export class EditRegistrationService {
     });
     const invoiceGuid = invoiceRows[0]?.Invoice_GUID ?? '';
 
-    await this.mp.updateTableRecords('Invoices', [
-      {
-        Invoice_ID: invoiceId,
-        Invoice_Total: newTotal,
-        Invoice_Status_ID: statusId,
-      },
-    ]);
+    await this.mp.updateTableRecords(
+      'Invoices',
+      [
+        {
+          Invoice_ID: invoiceId,
+          Invoice_Total: newTotal,
+          Invoice_Status_ID: statusId,
+        },
+      ],
+      { $userId: userId },
+    );
 
     return { newTotal, totalPaid, invoiceGuid };
   }
 
-  async adjustPaymentForInvoice(invoiceId: number, invoiceDetailId: number, newLineTotal: number): Promise<void> {
+  async adjustPaymentForInvoice(
+    invoiceId: number,
+    invoiceDetailId: number,
+    newLineTotal: number,
+    userId: number,
+  ): Promise<void> {
     // Find payment details linked to this invoice detail
     const paymentDetails = await this.mp.getTableRecords<{
       Payment_Detail_ID: number;
@@ -226,12 +249,16 @@ export class EditRegistrationService {
     const lastPd = paymentDetails[paymentDetails.length - 1];
     const newPaymentAmount = lastPd.Payment_Amount + diff;
 
-    await this.mp.updateTableRecords('Payment_Detail', [
-      {
-        Payment_Detail_ID: lastPd.Payment_Detail_ID,
-        Payment_Amount: newPaymentAmount,
-      },
-    ]);
+    await this.mp.updateTableRecords(
+      'Payment_Detail',
+      [
+        {
+          Payment_Detail_ID: lastPd.Payment_Detail_ID,
+          Payment_Amount: newPaymentAmount,
+        },
+      ],
+      { $userId: userId },
+    );
 
     // Recalculate the parent Payment_Total
     const allPaymentDetails = await this.mp.getTableRecords<{
@@ -243,12 +270,16 @@ export class EditRegistrationService {
     });
 
     const newPaymentTotal = allPaymentDetails.reduce((sum, pd) => sum + pd.Payment_Amount, 0);
-    await this.mp.updateTableRecords('Payments', [
-      {
-        Payment_ID: lastPd.Payment_ID,
-        Payment_Total: newPaymentTotal,
-      },
-    ]);
+    await this.mp.updateTableRecords(
+      'Payments',
+      [
+        {
+          Payment_ID: lastPd.Payment_ID,
+          Payment_Total: newPaymentTotal,
+        },
+      ],
+      { $userId: userId },
+    );
   }
 
   async getMoveTargetEvents(event: RegistrationEvent): Promise<MoveTargetEvent[]> {
@@ -267,7 +298,8 @@ export class EditRegistrationService {
 
     return this.mp.getTableRecords<MoveTargetEvent>({
       table: 'Events',
-      select: 'Event_ID, Event_Title, Event_Start_Date, Online_Registration_Product',
+      select:
+        'Event_ID, Event_Title, Event_Start_Date, Online_Registration_Product, Congregation_ID_TABLE.Congregation_Name',
       filter: conditions.join(' AND '),
       orderBy: 'Event_Start_Date',
     });
@@ -276,25 +308,33 @@ export class EditRegistrationService {
   async moveParticipantToEvent(
     eventParticipantId: number,
     newEventId: number,
+    userId: number,
   ): Promise<void> {
-    await this.mp.updateTableRecords('Event_Participants', [
-      {
-        Event_Participant_ID: eventParticipantId,
-        Event_ID: newEventId,
-      },
-    ]);
+    await this.mp.updateTableRecords(
+      'Event_Participants',
+      [
+        {
+          Event_Participant_ID: eventParticipantId,
+          Event_ID: newEventId,
+        },
+      ],
+      { $userId: userId },
+    );
   }
 
   async updateInvoiceDetailProduct(
     invoiceDetailIds: number[],
     newProductId: number,
+    userId: number,
   ): Promise<void> {
     if (invoiceDetailIds.length === 0) return;
-    await this.mp.updateTableRecords('Invoice_Detail',
+    await this.mp.updateTableRecords(
+      'Invoice_Detail',
       invoiceDetailIds.map((id) => ({
         Invoice_Detail_ID: id,
         Product_ID: newProductId,
       })),
+      { $userId: userId },
     );
   }
 
@@ -303,15 +343,20 @@ export class EditRegistrationService {
     newProductId: number,
     newProductOptionPriceId: number,
     newLineTotal: number,
+    userId: number,
   ): Promise<void> {
-    await this.mp.updateTableRecords('Invoice_Detail', [
-      {
-        Invoice_Detail_ID: invoiceDetailId,
-        Product_ID: newProductId,
-        Product_Option_Price_ID: newProductOptionPriceId,
-        Line_Total: newLineTotal,
-      },
-    ]);
+    await this.mp.updateTableRecords(
+      'Invoice_Detail',
+      [
+        {
+          Invoice_Detail_ID: invoiceDetailId,
+          Product_ID: newProductId,
+          Product_Option_Price_ID: newProductOptionPriceId,
+          Line_Total: newLineTotal,
+        },
+      ],
+      { $userId: userId },
+    );
   }
 
   async getProductOptionPriceById(priceId: number): Promise<{ Add_to_Group: number | null } | null> {
@@ -328,6 +373,7 @@ export class EditRegistrationService {
     eventParticipantId: number,
     groupParticipantId: number | null,
     newProductOptionPriceId: number,
+    userId: number,
   ): Promise<void> {
     const optionPrice = await this.getProductOptionPriceById(newProductOptionPriceId);
     if (!optionPrice) return;
@@ -336,21 +382,29 @@ export class EditRegistrationService {
     if (newGroupId === null) return;
 
     // 1. Update Event_Participants.Group_ID to the new group
-    await this.mp.updateTableRecords('Event_Participants', [
-      {
-        Event_Participant_ID: eventParticipantId,
-        Group_ID: newGroupId,
-      },
-    ]);
+    await this.mp.updateTableRecords(
+      'Event_Participants',
+      [
+        {
+          Event_Participant_ID: eventParticipantId,
+          Group_ID: newGroupId,
+        },
+      ],
+      { $userId: userId },
+    );
 
     // 2. Update the linked Group_Participants record to match the same group
     if (groupParticipantId !== null) {
-      await this.mp.updateTableRecords('Group_Participants', [
-        {
-          Group_Participant_ID: groupParticipantId,
-          Group_ID: newGroupId,
-        },
-      ]);
+      await this.mp.updateTableRecords(
+        'Group_Participants',
+        [
+          {
+            Group_Participant_ID: groupParticipantId,
+            Group_ID: newGroupId,
+          },
+        ],
+        { $userId: userId },
+      );
     }
   }
 }

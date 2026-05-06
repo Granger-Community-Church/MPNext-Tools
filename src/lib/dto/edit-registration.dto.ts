@@ -5,6 +5,7 @@ export interface RegistrationEvent {
   Online_Registration_Product: number | null;
   Registration_Form: number | null;
   Program_ID: number;
+  Congregation_Name: string | null;
 }
 
 export interface RegistrationParticipant {
@@ -68,6 +69,7 @@ export interface MoveTargetEvent {
   Event_Title: string;
   Event_Start_Date: string;
   Online_Registration_Product: number | null;
+  Congregation_Name: string | null;
 }
 
 export interface MoveProductOptionMapping {

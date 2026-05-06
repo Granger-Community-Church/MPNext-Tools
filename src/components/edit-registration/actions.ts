@@ -3,6 +3,7 @@
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { EditRegistrationService } from '@/services/editRegistrationService';
+import { getCurrentUserIdFromSession } from '@/components/shared-actions/user';
 import type {
   RegistrationEvent,
   RegistrationParticipant,
@@ -141,7 +142,8 @@ export async function saveRegistrationEdits(
   | { success: true; paymentInfo?: { newTotal: number; totalPaid: number; invoiceGuid: string } }
   | { success: false; error: string }
 > {
-  await getSession();
+  const session = await getSession();
+  const userId = await getCurrentUserIdFromSession(session);
 
   try {
     const service = await EditRegistrationService.getInstance();
@@ -156,6 +158,7 @@ export async function saveRegistrationEdits(
       await service.updateParticipationStatus(
         payload.eventParticipantId,
         payload.participationStatusId,
+        userId,
       );
     }
 
@@ -165,6 +168,7 @@ export async function saveRegistrationEdits(
           update.invoiceDetailId,
           update.newProductOptionPriceId,
           update.newLineTotal,
+          userId,
         );
 
         const detail = await service.getInvoiceDetails(payload.eventParticipantId);
@@ -174,8 +178,9 @@ export async function saveRegistrationEdits(
             updatedDetail.Invoice_ID,
             update.invoiceDetailId,
             update.newLineTotal,
+            userId,
           );
-          const result = await service.recalculateInvoiceTotal(updatedDetail.Invoice_ID);
+          const result = await service.recalculateInvoiceTotal(updatedDetail.Invoice_ID, userId);
           if (result) paymentInfo = result;
         }
 
@@ -185,6 +190,7 @@ export async function saveRegistrationEdits(
             payload.eventParticipantId,
             groupParticipantId,
             update.newProductOptionPriceId,
+            userId,
           );
         }
       }
@@ -205,6 +211,7 @@ export async function saveRegistrationEdits(
             targetProductId,
             mapping.targetProductOptionPriceId,
             mapping.targetLineTotal,
+            userId,
           );
 
           await service.adjustPaymentForInvoice(
@@ -212,6 +219,7 @@ export async function saveRegistrationEdits(
               .find((d) => d.Invoice_Detail_ID === mapping.sourceInvoiceDetailId)?.Invoice_ID ?? 0,
             mapping.sourceInvoiceDetailId,
             mapping.targetLineTotal,
+            userId,
           );
 
           // Sync group membership for the remapped option
@@ -220,6 +228,7 @@ export async function saveRegistrationEdits(
               payload.eventParticipantId,
               groupParticipantId,
               mapping.targetProductOptionPriceId,
+              userId,
             );
           }
         }
@@ -235,12 +244,13 @@ export async function saveRegistrationEdits(
           await service.updateInvoiceDetailProduct(
             unmappedDetails.map((d) => d.Invoice_Detail_ID),
             targetProductId,
+            userId,
           );
         }
 
         // Recalculate invoice total after all changes
         if (allDetails.length > 0) {
-          const result = await service.recalculateInvoiceTotal(allDetails[0].Invoice_ID);
+          const result = await service.recalculateInvoiceTotal(allDetails[0].Invoice_ID, userId);
           if (result) paymentInfo = result;
         }
       }
@@ -248,6 +258,7 @@ export async function saveRegistrationEdits(
       await service.moveParticipantToEvent(
         payload.eventParticipantId,
         payload.moveToEventId,
+        userId,
       );
     }
 

@@ -384,7 +384,9 @@ export function EditRegistration({ params }: EditRegistrationProps) {
       <div className="px-6 py-4 space-y-4 max-w-5xl">
         {event && (
           <div className="text-sm text-muted-foreground">
-            {event.Event_Title} &mdash; {formatEventDate(event.Event_Start_Date)}
+            {event.Event_Title}
+            {event.Congregation_Name ? ` (${event.Congregation_Name})` : ''} &mdash;{' '}
+            {formatEventDate(event.Event_Start_Date)}
           </div>
         )}
 
