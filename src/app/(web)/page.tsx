@@ -79,6 +79,34 @@ export default function Home() {
             </Link>
           </CardContent>
         </Card>
+
+        <Card className="flex flex-col">
+          <CardHeader>
+            <CardTitle>Event Checkin</CardTitle>
+            <CardDescription>
+              Check in participants and print nametags for events
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="mt-auto">
+            <Link href="/tools/eventcheckin">
+              <Button className="w-full">Open Tool</Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Card className="flex flex-col">
+          <CardHeader>
+            <CardTitle>Edit Registration</CardTitle>
+            <CardDescription>
+              Edit participant status, product options, and move registrants between events
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="mt-auto">
+            <Link href="/tools/editregistration">
+              <Button className="w-full">Open Tool</Button>
+            </Link>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
