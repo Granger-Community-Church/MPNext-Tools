@@ -12,6 +12,7 @@ This guide provides essential information for AI assistants (like Claude) workin
 - **Build MP SQL Install**: `npm run mp:build:install` (combines SQL files from `db/` into unified `_INSTALL/ministryplatform-install.sql`, skips if unchanged)
 - **Tests**: `npm test` (Vitest in watch mode), `npm run test:run` (single run), `npm run test:coverage` (with coverage)
 - **Setup**: `npm run setup` (interactive project setup wizard), `npm run setup:check` (validate setup without changes)
+- **Sync upstream**: `git fetch upstream && git merge upstream/main` (pulls latest from [MinistryPlatform-Community/MPNext-Tools](https://github.com/MinistryPlatform-Community/MPNext-Tools))
 
 ### Type Generation Notes
 
