@@ -48,8 +48,7 @@ export async function fetchRegistrationData(eventId: number): Promise<{
     const groupIds = productOptionGroups.map((g) => g.Product_Option_Group_ID);
     productOptionPrices = await service.getProductOptionPrices(groupIds);
 
-    const epIds = participants.map((p) => p.Event_Participant_ID);
-    allInvoiceDetails = await service.getAllInvoiceDetailsForEvent(eventId, epIds);
+    allInvoiceDetails = await service.getAllInvoiceDetailsForEvent(eventId);
   }
 
   const priceIdToTitle = new Map<number, string>();
