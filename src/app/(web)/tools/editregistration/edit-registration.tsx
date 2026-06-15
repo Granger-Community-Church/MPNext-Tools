@@ -166,6 +166,8 @@ export function EditRegistration({ params }: EditRegistrationProps) {
   );
 
   useEffect(() => {
+    // Initial data load on mount / event change; loader sets loading + data state.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadEventData();
   }, [loadEventData]);
 
