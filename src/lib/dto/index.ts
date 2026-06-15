@@ -32,3 +32,28 @@ export type {
   MoveProductOptionMapping,
   ParticipantGridRow,
 } from './edit-registration.dto';
+
+export type {
+  FamilyAddress,
+  FamilyMember,
+  FamilyMemberParticipant,
+  Household,
+  FamilyLookups,
+  FamilyDefaults,
+  LookupOption,
+  StateOption,
+  CountryOption,
+  ContactSearchResult,
+  SavedMemberId,
+  SaveProgress,
+} from './family';
+
+export {
+  FamilyAddressSchema,
+  FamilyMemberSchema,
+  FamilyMemberParticipantSchema,
+  HouseholdSchema,
+  emptyAddress,
+  emptyMember,
+  emptyHousehold,
+} from './family';

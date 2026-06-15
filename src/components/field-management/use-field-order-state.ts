@@ -23,6 +23,7 @@ interface FieldOrderState {
   addGroup: (name: string) => void;
   removeGroup: (name: string) => void;
   moveHiddenToOther: () => void;
+  hideAllSeparators: () => void;
   updateField: (id: number, updates: Partial<PageField>) => void;
   buildSavePayload: () => FieldOrderPayload[];
 }
@@ -162,6 +163,46 @@ export function useFieldOrderState(fields: PageField[]): FieldOrderState {
     setIsDirty(true);
   }, [fieldLookup]);
 
+  const hideAllSeparators = useCallback(() => {
+    const separatorIds = new Set<number>();
+    for (const field of fieldLookup.values()) {
+      if (field.isSeparator) separatorIds.add(field.Page_Field_ID);
+    }
+    if (separatorIds.size === 0) return;
+
+    setFieldLookup((prev) => {
+      const next = new Map(prev);
+      for (const id of separatorIds) {
+        const existing = next.get(id);
+        if (existing && !existing.Hidden) {
+          next.set(id, { ...existing, Hidden: true });
+        }
+      }
+      return next;
+    });
+
+    setGroupedFields((prev) => {
+      const next: GroupedFieldsMap = {};
+      for (const [groupName, ids] of Object.entries(prev)) {
+        if (groupName === OTHER_FIELDS_GROUP) continue;
+        next[groupName] = ids.filter((id) => !separatorIds.has(id));
+      }
+      const existingOther = prev[OTHER_FIELDS_GROUP] ?? [];
+      next[OTHER_FIELDS_GROUP] = [
+        ...existingOther.filter((id) => !separatorIds.has(id)),
+        ...separatorIds,
+      ];
+      return next;
+    });
+
+    setGroupOrder((prev) => {
+      if (prev.includes(OTHER_FIELDS_GROUP)) return prev;
+      return [...prev, OTHER_FIELDS_GROUP];
+    });
+
+    setIsDirty(true);
+  }, [fieldLookup]);
+
   const updateField = useCallback((id: number, updates: Partial<PageField>) => {
     setFieldLookup((prev) => {
       const existing = prev.get(id);
@@ -226,6 +267,7 @@ export function useFieldOrderState(fields: PageField[]): FieldOrderState {
     addGroup,
     removeGroup,
     moveHiddenToOther,
+    hideAllSeparators,
     updateField,
     buildSavePayload,
   };
@@ -263,20 +305,15 @@ function initializeGroupOrder(fields: PageField[]): string[] {
 
   if (!hasGroups) return [FLAT_GROUP];
 
-  // Group names sorted by the minimum View_Order of their fields
-  const groupMinOrder = new Map<string, number>();
+  const groupNames = new Set<string>();
   for (const field of fields) {
-    const groupName = field.Group_Name ?? OTHER_FIELDS_GROUP;
-    const current = groupMinOrder.get(groupName);
-    if (current === undefined || field.View_Order < current) {
-      groupMinOrder.set(groupName, field.View_Order);
-    }
+    groupNames.add(field.Group_Name ?? OTHER_FIELDS_GROUP);
   }
 
-  const order = [...groupMinOrder.keys()].sort((a, b) => {
+  const order = [...groupNames].sort((a, b) => {
     if (a === OTHER_FIELDS_GROUP) return 1;
     if (b === OTHER_FIELDS_GROUP) return -1;
-    return groupMinOrder.get(a)! - groupMinOrder.get(b)!;
+    return a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
   });
 
   return order;
