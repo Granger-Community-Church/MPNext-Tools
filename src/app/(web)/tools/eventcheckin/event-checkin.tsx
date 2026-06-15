@@ -61,6 +61,8 @@ export function EventCheckin({ params }: EventCheckinProps) {
   }, [eventId]);
 
   useEffect(() => {
+    // Initial data load on mount / eventId change; loader sets loading + data state.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadData();
   }, [loadData]);
 

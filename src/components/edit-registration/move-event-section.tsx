@@ -75,6 +75,8 @@ export function MoveEventSection({
 
   useEffect(() => {
     let cancelled = false;
+    // Loading flag before async fetch — pattern not avoidable without a reducer.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoading(true);
     fetchMoveTargetEvents(eventId)
       .then((events) => {
@@ -94,6 +96,8 @@ export function MoveEventSection({
   // Fetch target product options when target event changes to a different product
   useEffect(() => {
     if (!selectedTarget || !needsRemapping || !selectedTarget.Online_Registration_Product) {
+      // Reset derived target options when the target no longer needs remapping.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTargetGroups([]);
       setTargetPrices([]);
       return;
