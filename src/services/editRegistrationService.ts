@@ -109,12 +109,15 @@ export class EditRegistrationService {
     });
   }
 
-  async getAllInvoiceDetailsForEvent(eventId: number, participantIds: number[]): Promise<InvoiceDetailRow[]> {
-    if (participantIds.length === 0) return [];
+  async getAllInvoiceDetailsForEvent(eventId: number): Promise<InvoiceDetailRow[]> {
+    // Filter via the Event_Participants FK rather than an `Event_Participant_ID IN (...)`
+    // list. For large events that IN list produces a GET query string that exceeds the
+    // MP web server's max query-string length, which is rejected with an HTML 404 before
+    // MP runs the query. Traversing the FK keeps the request short and constant-length.
     return this.mp.getTableRecords<InvoiceDetailRow>({
       table: 'Invoice_Detail',
       select: 'Invoice_Detail_ID, Invoice_ID, Event_Participant_ID, Product_ID, Product_Option_Price_ID, Line_Total, Item_Quantity',
-      filter: `Event_Participant_ID IN (${participantIds.join(',')})`,
+      filter: `Event_Participant_ID_TABLE.Event_ID = ${eventId}`,
     });
   }
 
