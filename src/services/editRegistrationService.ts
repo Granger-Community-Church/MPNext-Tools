@@ -116,7 +116,10 @@ export class EditRegistrationService {
     // MP runs the query. Traversing the FK keeps the request short and constant-length.
     return this.mp.getTableRecords<InvoiceDetailRow>({
       table: 'Invoice_Detail',
-      select: 'Invoice_Detail_ID, Invoice_ID, Event_Participant_ID, Product_ID, Product_Option_Price_ID, Line_Total, Item_Quantity',
+      // The FK traversal joins Event_Participants, which also has an
+      // Event_Participant_ID column, so qualify it to avoid an ambiguous-column error.
+      select:
+        'Invoice_Detail_ID, Invoice_ID, Invoice_Detail.Event_Participant_ID, Product_ID, Product_Option_Price_ID, Line_Total, Item_Quantity',
       filter: `Event_Participant_ID_TABLE.Event_ID = ${eventId}`,
     });
   }
