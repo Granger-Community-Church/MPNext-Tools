@@ -1,7 +1,7 @@
 ---
 title: TODO Index
 type: index
-last_updated: 2026-05-21
+last_updated: 2026-09-10
 ---
 
 <!-- 2026-04-18: closed 3 routing TODOs (proxy-api-whitelist, signin-no-error-ui, home-page-roundtrip) — see commit fix(routing): tighten proxy API whitelist, add signin error UI, optimize /home redirect -->
@@ -9,6 +9,7 @@ last_updated: 2026-05-21
 <!-- 2026-04-18: closed 5 low TODOs (contexts-session-context-misnamed, dto-constants-batchsize-duplication, dto-constants-mailerid-not-validated, testing-claude-md-readme-counts-drift, verify-auth-oauth-flow) — see commit chore: rename contexts hook, dedupe BATCH_SIZE, validate mailerId, refresh docs -->
 <!-- 2026-05-21: opened 1 critical TODO (xmldom-critical-vulnerability) — see install-testing feedback; address before next ship -->
 <!-- 2026-05-21: closed 1 critical TODO (xmldom-critical-vulnerability) — replaced docxtemplater-image-module-free with maintained docxtemplater-image (uses @xmldom/xmldom@^0.9.7) -->
+<!-- 2026-09-10: opened 1 low TODO (copy-from-event-make-unique-v2) — Copy Moore "make unique" follow-up for the Copy From Event tool -->
 
 
 # TODO Index
@@ -20,7 +21,7 @@ All open TODOs dropped during the context-engineering review (2026-04-17) and an
 - **medium**: doc drift, missing test, refactor with real cost
 - **low**: nits, minor doc fixes, stylistic improvements
 
-Total: **3 open TODOs**.
+Total: **4 open TODOs**.
 
 ---
 
@@ -39,8 +40,10 @@ _none open_
 | components | bug, refactor | Merge tokens `{{Field_Name}}` have no resolver anywhere | [→](2026-04-17-components-template-editor-merge-token-resolver.md) |
 | components | missing-test | No tests for `src/components/template-editor/` | [→](2026-04-17-components-template-editor-missing-tests.md) |
 
-### Low (0)
-_none open_
+### Low (1)
+| Area | Tags | Title | File |
+|---|---|---|---|
+| components | refactor | Copy From Event v2 — "make unique" clone of shared Product / Form / Registrant Group | [→](2026-09-10-copy-from-event-make-unique-v2.md) |
 
 ---
 
@@ -58,8 +61,9 @@ _doc-to-code or doc-to-doc divergence; mostly resolved inline by Phase 4 verific
 ### missing-test (1)
 - components-template-editor-missing-tests — medium
 
-### refactor (1)
+### refactor (2)
 _improvements with real value but no functional defect_
+- copy-from-event-make-unique-v2 — low
 
 ### doc (1)
 _documentation-only tasks, mostly retiring old flat files or updating CLAUDE.md / README.md_
@@ -73,7 +77,7 @@ _none open_
 
 | Area | Count |
 |---|---|
-| components | 3 |
+| components | 4 |
 | auth | 0 |
 | mp-provider | 0 |
 | services | 0 |
