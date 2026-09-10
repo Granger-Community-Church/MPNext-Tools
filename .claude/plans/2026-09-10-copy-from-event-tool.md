@@ -2,7 +2,7 @@
 
 **Author:** jmoore@grangerchurch.com (drafted with Claude)
 **Date:** 2026-09-10 (revised same day after review)
-**Status:** Approved, in progress
+**Status:** Built; manual test passed on throwaway event 98575 (2026-09-10); PR open
 **Branch:** `feature/copy-from-event-tool`
 
 ## Context
@@ -18,6 +18,8 @@ Reference example: target 97983 "Night of Worship" (2026-09-17) was created from
 - **Series**: driven by `dp_Sequences`, not `Parent_Event_ID`. Use core proc `api_Common_GetEventsInSeries(@EventID)` (verified: returns full Event rows for all occurrences, empty for standalone). Scope radio: **Just this event** (default) / **This and all future occurrences** (start date >= target's start date) / **All occurrences**.
 - **Copy Moore** ("make unique" cloning of Product/Form/Group via `util_CopyMoore_Granger`): **tabled for v2**. Store both SQL files under `.claude/references/granger/` plus a TODO entry.
 - **UI style**: model on Edit Registration (sectioned cards, footer save).
+- **File attachments**: not copied in v1; tracked in `.claude/TODO/2026-09-10-copy-from-event-file-attachments-v2.md` (raised during the manual test).
+- **Copy Moore "make unique"**: v2, `.claude/TODO/2026-09-10-copy-from-event-make-unique-v2.md`.
 
 ### Key findings that shape the code
 - Generated models are **stale vs this org's schema**: `models/EventRooms.ts` lacks `Front_of_Room`, `Auditorium_Chairs`, `Round_Tables`, `Presenter_Tables`, `Presenter_Chairs`, `Power_Strips`, `Room_Occupied`; `models/Events.ts` lacks `Additional_Description` and `Registrant_Group`. `MPHelper.createTableRecords` runs `schema.parse()` (`helper.ts:212`) and Zod v4 strips unknown keys, and `EventRoomsSchema` requires `Event_Room_ID`. So: use a **hand-written `EventRoomCreateSchema`** for room creates and **no schema** on the Events update. Do not regenerate models on this branch (large unrelated diff; sandbox/prod drift noted in memory).
