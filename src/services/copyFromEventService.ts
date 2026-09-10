@@ -1,12 +1,8 @@
 import { MPHelper } from '@/lib/providers/ministry-platform';
 import { MP_FETCH_BATCH_SIZE } from '@/lib/constants';
 import { escapeFilterString, validatePositiveInt } from '@/lib/validation';
-import {
-  COPYABLE_FIELDS,
-  EVENT_ROOM_COPY_COLUMNS,
-  EventRoomCreateSchema,
-  isCopyableTextField,
-} from '@/lib/dto';
+import { COPYABLE_FIELDS, EVENT_ROOM_COPY_COLUMNS, EventRoomCreateSchema, isCopyableTextField } from '@/lib/dto';
+import { mergeText, mpDatetimeKey, pairKey, resolveOccurrences, toRoomCreate } from '@/lib/copy-from-event-utils';
 import type {
   ApplyCopyPayload,
   ApplyCopyResult,
@@ -17,7 +13,6 @@ import type {
   FieldCopyMode,
   OccurrenceCopyResult,
   SeriesOccurrence,
-  SeriesScope,
   SourceEventSearchResult,
 } from '@/lib/dto';
 
@@ -66,87 +61,6 @@ const EVENT_ROOM_SELECT = [
 
 const SEARCH_TOP = 25;
 const SERIES_PROC = 'api_Common_GetEventsInSeries';
-
-// ---------------------------------------------------------------------------
-// Pure helpers (exported for tests)
-// ---------------------------------------------------------------------------
-
-const HTML_TAG_RE = /<\/?[a-z][^>]*>/i;
-
-export function looksLikeHtml(value: string | null | undefined): boolean {
-  return typeof value === 'string' && HTML_TAG_RE.test(value);
-}
-
-/**
- * Computes the new value for a text field.
- * - overwrite: the source value (may be null).
- * - append: existing + separator + source. Falls back to plain overwrite when
- *   the target is empty, and leaves the target untouched when the source is empty.
- * The separator is `<br><br>` when either side contains HTML (these fields are
- * edited with MP's rich-text editor in practice), otherwise two newlines.
- */
-export function mergeText(
-  existing: string | null,
-  source: string | null,
-  mode: FieldCopyMode,
-): string | null {
-  if (mode === 'overwrite') return source;
-  const src = source ?? '';
-  const cur = existing ?? '';
-  if (src.trim() === '') return existing;
-  if (cur.trim() === '') return source;
-  const separator = looksLikeHtml(cur) || looksLikeHtml(src) ? '<br><br>' : '\n\n';
-  return `${cur}${separator}${src}`;
-}
-
-export function pairKey(eventId: number, roomId: number, groupId: number | null): string {
-  return `${eventId}:${roomId}:${groupId ?? 'null'}`;
-}
-
-/** Builds the create record for a target event from a source row. */
-export function toRoomCreate(row: EventRoomRow, targetEventId: number): EventRoomCreate {
-  const record = { Event_ID: targetEventId, Cancelled: false as const } as Record<string, unknown>;
-  for (const column of EVENT_ROOM_COPY_COLUMNS) {
-    record[column] = row[column] ?? null;
-  }
-  return record as EventRoomCreate;
-}
-
-/**
- * MP returns datetimes as wall-clock strings (`YYYY-MM-DDTHH:mm:ss`). Both sides
- * of every comparison here come from the MP API in that same format, so a lexical
- * compare of the normalized prefix orders them correctly without any timezone math.
- */
-function mpDatetimeKey(value: string): string {
-  return value.trim().slice(0, 19);
-}
-
-/** Pure scope filter. Always includes the target itself, deduped by Event_ID. */
-export function resolveOccurrences(
-  target: SeriesOccurrence,
-  seriesOccurrences: SeriesOccurrence[],
-  scope: SeriesScope,
-): SeriesOccurrence[] {
-  if (scope === 'this') return [target];
-
-  const targetKey = mpDatetimeKey(target.Event_Start_Date);
-  const seen = new Set<number>();
-  const result: SeriesOccurrence[] = [];
-
-  const candidates = [...seriesOccurrences].sort((a, b) =>
-    mpDatetimeKey(a.Event_Start_Date).localeCompare(mpDatetimeKey(b.Event_Start_Date)),
-  );
-  for (const occ of candidates) {
-    if (scope === 'future' && mpDatetimeKey(occ.Event_Start_Date) < targetKey) continue;
-    if (seen.has(occ.Event_ID)) continue;
-    seen.add(occ.Event_ID);
-    result.push(occ);
-  }
-  if (!seen.has(target.Event_ID)) {
-    result.push(target);
-  }
-  return result;
-}
 
 function chunk<T>(items: T[], size: number): T[][] {
   const out: T[][] = [];

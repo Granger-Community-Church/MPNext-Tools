@@ -121,6 +121,20 @@ export default function Home() {
             </Link>
           </CardContent>
         </Card>
+
+        <Card className="flex flex-col">
+          <CardHeader>
+            <CardTitle>Copy From Event</CardTitle>
+            <CardDescription>
+              Copy descriptions, registration settings, and Rooms &amp; Groups from a previous event onto this one
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="mt-auto">
+            <Link href="/tools/copyfromevent">
+              <Button className="w-full">Open Tool</Button>
+            </Link>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
