@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  formatGroupLabel,
   formatMpDateTime,
   looksLikeHtml,
   mergeText,
@@ -20,6 +21,7 @@ function roomRow(overrides: Partial<EventRoomRow> = {}): EventRoomRow {
     Building_Name: 'Granger Building',
     Group_ID: 7004,
     Group_Name: '3 yrs',
+    Group_Congregation_Name: 'Granger Campus',
     Room_Layout_ID: null,
     Layout_Name: null,
     Default_Group_Room: null,
@@ -137,6 +139,19 @@ describe('copy-from-event-utils', () => {
 
     it('dedupes by Event_ID', () => {
       expect(resolveOccurrences(target, [target, target], 'all')).toEqual([target]);
+    });
+  });
+
+  describe('formatGroupLabel', () => {
+    it('appends the congregation in parentheses', () => {
+      expect(formatGroupLabel({ Group_Name: '5th Grade Volunteers', Group_Congregation_Name: 'Elkhart Campus' })).toBe(
+        '5th Grade Volunteers (Elkhart Campus)',
+      );
+    });
+
+    it('falls back to the bare name, and null when there is no group', () => {
+      expect(formatGroupLabel({ Group_Name: 'Cafe', Group_Congregation_Name: null })).toBe('Cafe');
+      expect(formatGroupLabel({ Group_Name: null, Group_Congregation_Name: 'Granger Campus' })).toBeNull();
     });
   });
 

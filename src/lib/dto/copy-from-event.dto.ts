@@ -127,6 +127,8 @@ export interface EventRoomRow {
   Building_Name: string | null;
   Group_ID: number | null;
   Group_Name: string | null;
+  /** Congregation of the group (not the room); groups with the same name exist per campus. */
+  Group_Congregation_Name: string | null;
   Room_Layout_ID: number | null;
   Layout_Name: string | null;
   Default_Group_Room: boolean | null;

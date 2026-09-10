@@ -51,6 +51,7 @@ const EVENT_ROOM_SELECT = [
   'Room_ID_TABLE_Building_ID_TABLE.Building_Name',
   'Event_Rooms.Group_ID',
   'Group_ID_TABLE.Group_Name',
+  'Group_ID_TABLE_Congregation_ID_TABLE.Congregation_Name AS Group_Congregation_Name',
   'Event_Rooms.Room_Layout_ID',
   'Room_Layout_ID_TABLE.Layout_Name',
   ...EVENT_ROOM_COPY_COLUMNS.filter((c) => c !== 'Room_ID' && c !== 'Group_ID' && c !== 'Room_Layout_ID').map(

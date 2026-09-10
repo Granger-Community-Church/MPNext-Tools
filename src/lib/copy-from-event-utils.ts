@@ -50,6 +50,17 @@ export function roomGroupKey(roomId: number, groupId: number | null): string {
   return `${roomId}:${groupId ?? 'null'}`;
 }
 
+/**
+ * Display label for a room row's group: "5th Grade Volunteers (Elkhart Campus)".
+ * Groups with the same name exist per campus, so the congregation disambiguates.
+ */
+export function formatGroupLabel(
+  row: Pick<EventRoomRow, 'Group_Name' | 'Group_Congregation_Name'>,
+): string | null {
+  if (!row.Group_Name) return null;
+  return row.Group_Congregation_Name ? `${row.Group_Name} (${row.Group_Congregation_Name})` : row.Group_Name;
+}
+
 /** Builds the create record for a target event from a source row. */
 export function toRoomCreate(row: EventRoomRow, targetEventId: number): EventRoomCreate {
   const record = { Event_ID: targetEventId, Cancelled: false as const } as Record<string, unknown>;

@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { DoorOpen } from 'lucide-react';
-import { roomGroupKey } from '@/lib/copy-from-event-utils';
+import { formatGroupLabel, roomGroupKey } from '@/lib/copy-from-event-utils';
 import type { EventRoomRow } from '@/lib/dto';
 
 interface RoomCopySectionProps {
@@ -111,6 +111,7 @@ export function RoomCopySection({
               ) : (
                 visible.map((r) => {
                   const onTarget = targetPairs.has(roomGroupKey(r.Room_ID, r.Group_ID));
+                  const groupLabel = formatGroupLabel(r);
                   return (
                     <tr
                       key={r.Event_Room_ID}
@@ -123,14 +124,14 @@ export function RoomCopySection({
                           onCheckedChange={() => handleToggle(r.Event_Room_ID)}
                           onClick={(e) => e.stopPropagation()}
                           disabled={disabled}
-                          aria-label={`Select ${r.Room_Name}${r.Group_Name ? ` / ${r.Group_Name}` : ''}`}
+                          aria-label={`Select ${r.Room_Name}${groupLabel ? ` / ${groupLabel}` : ''}`}
                         />
                       </td>
                       <td className="px-3 py-2 text-muted-foreground">{r.Building_Name ?? '—'}</td>
                       <td className="px-3 py-2">{r.Room_Name}</td>
                       <td className="px-3 py-2">
                         <span className="flex items-center gap-2 flex-wrap">
-                          {r.Group_Name ?? <span className="text-muted-foreground">{'—'}</span>}
+                          {groupLabel ?? <span className="text-muted-foreground">{'—'}</span>}
                           {onTarget && <Badge variant="secondary">Already on target</Badge>}
                           {r.Cancelled && <Badge variant="outline">Cancelled</Badge>}
                         </span>
