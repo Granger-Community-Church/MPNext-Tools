@@ -53,7 +53,7 @@ Launched from an open Event record, lets staff pick a prior "source" event and c
 | `src/components/copy-from-event/actions.ts` | Server actions (auth guard → `CopyFromEventService`) |
 | `src/components/copy-from-event/source-event-search.tsx` | Popover + Command type-ahead on `Event_Title`, 300 ms debounce, same-title prefill |
 | `src/components/copy-from-event/field-copy-section.tsx` / `field-copy-row.tsx` | Mass-Assign-style rows: enable checkbox, Append checkbox (text fields), overwrite cue, source vs target values |
-| `src/components/copy-from-event/room-copy-section.tsx` | `Event_Rooms` checklist with select-all, cancelled toggle, "Already on target" badge |
+| `src/components/copy-from-event/room-copy-section.tsx` | `Event_Rooms` checklist with select-all, cancelled toggle, "Already on target" badge; group shown as `Name (Congregation)` via `formatGroupLabel` |
 | `src/components/copy-from-event/series-scope-section.tsx` | Radio: this event / this and future / all occurrences |
 | `src/components/copy-from-event/copy-result-summary.tsx` | Per-occurrence result table after apply |
 | `src/services/copyFromEventService.ts` | Queries, `api_Common_GetEventsInSeries`, apply orchestration |
@@ -103,7 +103,7 @@ Every base column is qualified (`Events.X`, `Event_Rooms.X`) because every selec
 | `getSeriesOccurrences(id)` | `api_Common_GetEventsInSeries` | `[]` for standalone |
 | `searchEvents({ term \| exactTitle, excludeEventId })` | `Events`, `LIKE` via `escapeFilterString` or `=` via quote doubling | newest first, top 25 |
 | `getRoomCounts(ids)` | `Event_Rooms` grouped `COUNT(Event_Room_ID)` | swallows errors → empty map |
-| `getEventRooms(id, { includeCancelled })` | `Event_Rooms` + `Room_ID_TABLE.Room_Name`, `Room_ID_TABLE_Building_ID_TABLE.Building_Name`, `Group_ID_TABLE.Group_Name`, `Room_Layout_ID_TABLE.Layout_Name` | |
+| `getEventRooms(id, { includeCancelled })` | `Event_Rooms` + `Room_ID_TABLE.Room_Name`, `Room_ID_TABLE_Building_ID_TABLE.Building_Name`, `Group_ID_TABLE.Group_Name`, `Group_ID_TABLE_Congregation_ID_TABLE.Congregation_Name AS Group_Congregation_Name`, `Room_Layout_ID_TABLE.Layout_Name` | |
 | `getExistingRoomPairs(ids)` | `Event_Rooms` `Event_ID, Room_ID, Group_ID`, non-cancelled | |
 | `updateEventFields(id, patch, userId)` | `updateTableRecords('Events')` **without** a schema | see Gotchas |
 | `createEventRooms(records, userId)` | `createTableRecords('Event_Rooms', …, { schema: EventRoomCreateSchema })` | |

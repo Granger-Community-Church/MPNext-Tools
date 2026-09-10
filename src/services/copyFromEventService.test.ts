@@ -50,6 +50,7 @@ function roomRow(overrides: Partial<EventRoomRow> = {}): EventRoomRow {
     Building_Name: 'Granger Building',
     Group_ID: 7004,
     Group_Name: '3 yrs',
+    Group_Congregation_Name: 'Granger Campus',
     Room_Layout_ID: null,
     Layout_Name: null,
     Default_Group_Room: null,
@@ -197,6 +198,9 @@ describe('CopyFromEventService', () => {
       expect(params.filter).toBe('Event_Rooms.Event_ID = 95394 AND Event_Rooms.Cancelled = 0');
       expect(params.select).toContain('Room_ID_TABLE_Building_ID_TABLE.Building_Name');
       expect(params.select).toContain('Room_Layout_ID_TABLE.Layout_Name');
+      expect(params.select).toContain(
+        'Group_ID_TABLE_Congregation_ID_TABLE.Congregation_Name AS Group_Congregation_Name',
+      );
       expect(params.select).toContain('Event_Rooms.Front_of_Room');
       expect(params.select).toContain('Event_Rooms.Room_Occupied');
       expect(params.select).not.toMatch(/(^|, )Notes/);

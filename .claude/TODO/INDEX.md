@@ -9,7 +9,8 @@ last_updated: 2026-09-10
 <!-- 2026-04-18: closed 5 low TODOs (contexts-session-context-misnamed, dto-constants-batchsize-duplication, dto-constants-mailerid-not-validated, testing-claude-md-readme-counts-drift, verify-auth-oauth-flow) — see commit chore: rename contexts hook, dedupe BATCH_SIZE, validate mailerId, refresh docs -->
 <!-- 2026-05-21: opened 1 critical TODO (xmldom-critical-vulnerability) — see install-testing feedback; address before next ship -->
 <!-- 2026-05-21: closed 1 critical TODO (xmldom-critical-vulnerability) — replaced docxtemplater-image-module-free with maintained docxtemplater-image (uses @xmldom/xmldom@^0.9.7) -->
-<!-- 2026-09-10: opened 2 low TODOs (copy-from-event-make-unique-v2, copy-from-event-file-attachments-v2) — Copy From Event v2 follow-ups -->
+<!-- 2026-09-10: opened 3 low TODOs (copy-from-event-make-unique-v2, copy-from-event-file-attachments-v2, copy-from-event-group-congregation-label) — Copy From Event follow-ups -->
+<!-- 2026-09-10: closed 1 low TODO (copy-from-event-group-congregation-label) — see commit feat(copy-from-event): show group congregation in Rooms & Groups listing -->
 
 
 # TODO Index
