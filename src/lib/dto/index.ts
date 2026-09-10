@@ -57,3 +57,33 @@ export {
   emptyMember,
   emptyHousehold,
 } from './family';
+
+export type {
+  CopyableTextField,
+  CopyableFkField,
+  CopyableField,
+  FkNameKey,
+  CopyableFieldDef,
+  EventFieldValues,
+  SourceEventSearchResult,
+  SeriesOccurrence,
+  SeriesScope,
+  EventRoomCopyColumn,
+  EventRoomRow,
+  EventRoomCreate,
+  FieldCopyMode,
+  FieldSelection,
+  FieldSelectionMap,
+  ApplyCopyPayload,
+  OccurrenceCopyResult,
+  ApplyCopyResult,
+  ApplyCopyResponse,
+} from './copy-from-event.dto';
+
+export {
+  COPYABLE_FIELDS,
+  EVENT_ROOM_COPY_COLUMNS,
+  EventRoomCreateSchema,
+  isCopyableTextField,
+  emptyFieldSelections,
+} from './copy-from-event.dto';
