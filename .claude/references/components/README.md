@@ -19,6 +19,7 @@ Reference docs for `src/components/` — the tool layout framework, layout wrapp
 | `template-editor.md` | GrapesJS email/document template editor (shard 15) | Working on templates or merge fields |
 | `field-management.md` | Drag-and-drop page field ordering (shard 16) | Working on MP page field layout UX |
 | `user-menu.md` | User dropdown + OIDC sign-out (shard 17) | Working on sign-out or RP-initiated logout |
+| `copy-from-event.md` | Copy fields + Event_Rooms from a source event onto the current event (series-aware) | Working on `/tools/copyfromevent`, event series, or Event_Rooms copies |
 
 ## Code surfaces
 | Path | Role |
@@ -33,6 +34,7 @@ Reference docs for `src/components/` — the tool layout framework, layout wrapp
 | `src/components/group-wizard/` | Group wizard — 14 files |
 | `src/components/template-editor/` | Template editor — 12 files |
 | `src/components/user-menu/` | User menu — 4 files |
+| `src/components/copy-from-event/` | Copy From Event — 9 files |
 
 ## Conventions (domain-wide)
 - File names: `kebab-case.tsx` (e.g., `tool-container.tsx`)

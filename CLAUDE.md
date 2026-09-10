@@ -75,6 +75,7 @@ This guide provides essential information for AI assistants (like Claude) workin
 ```
 src/components/
 ├── address-labels/       # Address label printing & mail merge
+├── copy-from-event/      # Copy fields + Rooms & Groups from a prior event onto the open event (series-aware)
 ├── dev-panel/            # Unified dev panel (localhost-only) - params, selection, contact records, user tools
 ├── field-management/     # Drag-and-drop MP page field order editor (PageSearch + FieldOrderEditor)
 ├── group-wizard/         # Multi-step group creation/edit wizard (6 steps)
