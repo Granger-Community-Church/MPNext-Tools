@@ -1,7 +1,7 @@
 ---
 title: Gotchas
 type: gotchas
-last_updated: 2026-04-17
+last_updated: 2026-09-10
 ---
 
 # Gotchas
@@ -30,6 +30,7 @@ Known pitfalls for agents working on MPNext-Tools. Each entry has a symptom-firs
 - GOTCHA-015: File uploaded but no `$userId` audit trail
 - GOTCHA-016: `createCommunication` with empty `[]` attachments sends JSON not multipart
 - GOTCHA-017: `getTables('Contacts')` returns multiple tables
+- GOTCHA-044: Custom MP columns silently dropped from create/update when passing a generated `*Schema`
 
 ### Services / SQL safety
 - GOTCHA-018: Unescaped single quotes in `$filter` break query or enable injection
@@ -212,6 +213,14 @@ Known pitfalls for agents working on MPNext-Tools. Each entry has a symptom-firs
 **Related:** [services/](services/)
 
 ---
+
+### GOTCHA-044: Custom MP columns silently dropped from create/update when passing a generated `*Schema`
+
+**Symptom:** `createTableRecords` / `updateTableRecords` succeed, but org-specific columns (e.g. `Event_Rooms.Front_of_Room`, `Room_Occupied`, `Events.Additional_Description`, `Registrant_Group`) never reach MP. Or a create throws a validation error demanding the primary key.
+**Root cause:** The files under `src/lib/providers/ministry-platform/models/` were generated from a domain whose schema differs from the target domain (sandbox vs prod drift). `MPHelper` runs `schema.parse(record)` (`helper.ts:212`), and Zod v4 `z.object()` strips unknown keys, so any column missing from the generated schema is discarded. Generated schemas also declare the PK as required.
+**Fix:** Before passing a generated schema to a write, confirm it contains every column you send. If the domain has custom columns, write a small hand-authored schema for the create shape (see `EventRoomCreateSchema` in `src/lib/dto/copy-from-event.dto.ts`) or omit `schema` for that call. Regenerating with `npm run mp:generate:models` against the target domain is the long-term fix but produces a large diff.
+**Enforced where:** Not enforced; documented in `components/copy-from-event.md`.
+**Related:** [components/copy-from-event.md](components/copy-from-event.md), GOTCHA-011
 
 ## Services / SQL safety
 
