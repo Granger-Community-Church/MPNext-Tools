@@ -423,3 +423,7 @@ FodyWeavers.xsd
 
 # Generated documentation
 docs/*
+.vercel
+
+# macOS
+.DS_Store
