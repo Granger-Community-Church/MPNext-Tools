@@ -1,9 +1,7 @@
 'use server';
 
-import { auth } from '@/lib/auth';
-import { headers } from 'next/headers';
+import { AuthorizationService } from '@/services/authorizationService';
 import { CopyFromEventService } from '@/services/copyFromEventService';
-import { getCurrentUserIdFromSession } from '@/components/shared-actions/user';
 import type {
   ApplyCopyPayload,
   ApplyCopyResponse,
@@ -13,10 +11,20 @@ import type {
   SourceEventSearchResult,
 } from '@/lib/dto';
 
-async function getSession() {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user?.id) throw new Error('Unauthorized');
-  return session;
+/**
+ * Authorization gate for this feature's server actions.
+ *
+ * A server action is a callable POST endpoint whether or not the page that
+ * renders it was ever fetched, so the tools layout gate is not sufficient on
+ * its own. "A session exists" proves nothing here: MP's OIDC endpoint
+ * authenticates ANY dp_Users record, and this app reads MP with its own service
+ * account. The service gates again and owns `$userId` attribution.
+ */
+async function requireAccess(
+  table: string,
+  operation: 'read' | 'create' | 'update' | 'delete',
+): Promise<number> {
+  return AuthorizationService.getInstance().requireSecurityRole({ table, operation });
 }
 
 export interface CopyFromEventData {
@@ -30,7 +38,7 @@ export interface CopyFromEventData {
 }
 
 export async function fetchCopyFromEventData(targetEventId: number): Promise<CopyFromEventData> {
-  await getSession();
+  await requireAccess('Events', 'read');
   const service = await CopyFromEventService.getInstance();
 
   const [target, series, targetRooms] = await Promise.all([
@@ -55,7 +63,7 @@ export async function searchSourceEvents(
   term: string,
   excludeEventId: number,
 ): Promise<SourceEventSearchResult[]> {
-  await getSession();
+  await requireAccess('Events', 'read');
   const service = await CopyFromEventService.getInstance();
   const matches = await service.searchEvents({ term, excludeEventId });
   return service.attachRoomCounts(matches);
@@ -66,7 +74,7 @@ export async function fetchSourceEventDetails(sourceEventId: number): Promise<{
   /** Includes cancelled rows; the client decides whether to show them. */
   rooms: EventRoomRow[];
 }> {
-  await getSession();
+  await requireAccess('Events', 'read');
   const service = await CopyFromEventService.getInstance();
   const [source, rooms] = await Promise.all([
     service.getEventFieldValues(sourceEventId),
@@ -76,11 +84,10 @@ export async function fetchSourceEventDetails(sourceEventId: number): Promise<{
 }
 
 export async function applyCopyFromEvent(payload: ApplyCopyPayload): Promise<ApplyCopyResponse> {
-  const session = await getSession();
+  await requireAccess('Events', 'update');
   try {
-    const userId = await getCurrentUserIdFromSession(session);
     const service = await CopyFromEventService.getInstance();
-    return await service.applyCopy(payload, userId);
+    return await service.applyCopy(payload);
   } catch (error) {
     console.error('applyCopyFromEvent error:', error);
     return {

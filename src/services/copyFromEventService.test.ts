@@ -17,6 +17,23 @@ vi.mock('@/lib/providers/ministry-platform', () => ({
   },
 }));
 
+/**
+ * Every service method gates through AuthorizationService, which has its own
+ * tests. The stub returns 42 as the acting MP User_ID; it is the only source of
+ * `$userId`, so the `$userId: 42` assertions below prove the service takes
+ * attribution from the gate rather than from a caller argument.
+ */
+const { mockRequireSecurityRole } = vi.hoisted(() => ({
+  mockRequireSecurityRole: vi.fn(async () => 42),
+}));
+
+vi.mock('@/services/authorizationService', () => ({
+  AuthorizationService: {
+    getInstance: () => ({ requireSecurityRole: mockRequireSecurityRole }),
+  },
+  UnauthorizedError: class UnauthorizedError extends Error {},
+}));
+
 import { CopyFromEventService } from './copyFromEventService';
 import { toRoomCreate } from '@/lib/copy-from-event-utils';
 import { EventRoomCreateSchema } from '@/lib/dto';
@@ -228,20 +245,21 @@ describe('CopyFromEventService', () => {
   });
 
   describe('writes', () => {
-    it('updateEventFields passes $userId and no schema', async () => {
-      await service.updateEventFields(5, { Description: 'x' }, 42);
+    it('updateEventFields gates Events/update and takes $userId from the gate, no schema', async () => {
+      await service.updateEventFields(5, { Description: 'x' });
       expect(mockUpdateTableRecords).toHaveBeenCalledWith(
         'Events',
         [{ Event_ID: 5, Description: 'x' }],
         { $userId: 42 },
       );
+      expect(mockRequireSecurityRole).toHaveBeenCalledWith({ table: 'Events', operation: 'update' });
     });
 
     it('createEventRooms passes the hand-written schema and skips empty batches', async () => {
-      await service.createEventRooms([], 42);
+      await service.createEventRooms([]);
       expect(mockCreateTableRecords).not.toHaveBeenCalled();
       const rec = toRoomCreate(roomRow(), 5);
-      await service.createEventRooms([rec], 42);
+      await service.createEventRooms([rec]);
       expect(mockCreateTableRecords).toHaveBeenCalledWith('Event_Rooms', [rec], {
         schema: EventRoomCreateSchema,
         $userId: 42,
@@ -283,7 +301,7 @@ describe('CopyFromEventService', () => {
 
     it('rejects same source and target', async () => {
       await expect(
-        service.applyCopy({ targetEventId: 1, sourceEventId: 1, scope: 'this', fields: {}, sourceEventRoomIds: [] }, 42),
+        service.applyCopy({ targetEventId: 1, sourceEventId: 1, scope: 'this', fields: {}, sourceEventRoomIds: [] }),
       ).rejects.toThrow('different');
     });
 
@@ -297,7 +315,6 @@ describe('CopyFromEventService', () => {
           fields: { Description: { mode: 'overwrite' }, Online_Registration_Product: { mode: 'overwrite' } },
           sourceEventRoomIds: [],
         },
-        42,
       );
       expect(mockExecuteProcedure).not.toHaveBeenCalled();
       expect(mockUpdateTableRecords).toHaveBeenCalledTimes(1);
@@ -314,7 +331,6 @@ describe('CopyFromEventService', () => {
       mockReads({ currentByEvent: { 10: { ...target, Description: source.Description } } });
       const result = await service.applyCopy(
         { targetEventId: 10, sourceEventId: 20, scope: 'this', fields: { Description: { mode: 'overwrite' } }, sourceEventRoomIds: [] },
-        42,
       );
       expect(mockUpdateTableRecords).not.toHaveBeenCalled();
       expect(result.occurrences[0].fieldsUpdated).toEqual([]);
@@ -331,7 +347,6 @@ describe('CopyFromEventService', () => {
       });
       const result = await service.applyCopy(
         { targetEventId: 10, sourceEventId: 20, scope: 'this', fields: { Description: { mode: 'append' } }, sourceEventRoomIds: [100] },
-        42,
       );
       expect(mockUpdateTableRecords).not.toHaveBeenCalled();
       expect(result.occurrences[0].fieldError).toMatch(/limit is 2000/);
@@ -351,7 +366,6 @@ describe('CopyFromEventService', () => {
       });
       const result = await service.applyCopy(
         { targetEventId: 10, sourceEventId: 20, scope: 'this', fields: {}, sourceEventRoomIds: [100, 101, 102, 999] },
-        42,
       );
       expect(mockCreateTableRecords).toHaveBeenCalledTimes(1);
       const [table, records, opts] = mockCreateTableRecords.mock.calls[0];
@@ -386,7 +400,6 @@ describe('CopyFromEventService', () => {
 
       const result = await service.applyCopy(
         { targetEventId: 10, sourceEventId: 20, scope: 'future', fields: { Description: { mode: 'overwrite' } }, sourceEventRoomIds: [] },
-        42,
       );
 
       expect(mockExecuteProcedure).toHaveBeenCalledWith('api_Common_GetEventsInSeries', { '@EventID': 10 });

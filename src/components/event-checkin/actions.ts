@@ -1,9 +1,8 @@
 'use server';
 
 import React from 'react';
-import { auth } from '@/lib/auth';
-import { headers } from 'next/headers';
 import { pdf } from '@react-pdf/renderer';
+import { AuthorizationService } from '@/services/authorizationService';
 import { EventCheckinService } from '@/services/eventCheckinService';
 import { registerPoppinsFont } from '@/lib/poppins-font';
 import { AVERY_5395 } from '@/lib/nametag-stock';
@@ -19,10 +18,20 @@ import type {
 
 registerPoppinsFont();
 
-async function getSession() {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user?.id) throw new Error('Unauthorized');
-  return session;
+/**
+ * Authorization gate for this feature's server actions.
+ *
+ * A server action is a callable POST endpoint whether or not the page that
+ * renders it was ever fetched, so the tools layout gate is not sufficient on
+ * its own. "A session exists" proves nothing here: MP's OIDC endpoint
+ * authenticates ANY dp_Users record, and this app reads MP with its own service
+ * account. The service gates again and owns `$userId` attribution.
+ */
+async function requireAccess(
+  table: string,
+  operation: 'read' | 'create' | 'update' | 'delete',
+): Promise<number> {
+  return AuthorizationService.getInstance().requireSecurityRole({ table, operation });
 }
 
 export async function fetchEventData(eventId: number): Promise<{
@@ -30,7 +39,7 @@ export async function fetchEventData(eventId: number): Promise<{
   participants: EventParticipantRow[];
   statuses: ParticipationStatus[];
 }> {
-  await getSession();
+  await requireAccess('Event_Participants', 'read');
 
   const service = await EventCheckinService.getInstance();
   const [event, participants, statuses] = await Promise.all([
@@ -46,7 +55,8 @@ export async function generateNametagPdf(
   nametags: NametagData[],
   config: NametagConfig,
 ): Promise<{ success: true; data: string } | { success: false; error: string }> {
-  await getSession();
+  // No MP call, but the nametags are participant names: same gate as the roster.
+  await requireAccess('Event_Participants', 'read');
 
   if (nametags.length === 0) {
     return { success: false, error: 'No nametags to print' };
@@ -78,7 +88,7 @@ export async function generateNametagPdf(
 export async function updateParticipantStatuses(
   payload: StatusUpdatePayload,
 ): Promise<{ success: true } | { success: false; error: string }> {
-  await getSession();
+  await requireAccess('Event_Participants', 'update');
 
   try {
     const service = await EventCheckinService.getInstance();

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const {
-  mockGetSession,
+  mockRequireSecurityRole,
   mockGetInstance,
   mockGetEventFieldValues,
   mockGetSeriesOccurrences,
@@ -9,10 +9,8 @@ const {
   mockSearchEvents,
   mockAttachRoomCounts,
   mockApplyCopy,
-  mockUserGetInstance,
-  mockGetUserIdByGuid,
 } = vi.hoisted(() => ({
-  mockGetSession: vi.fn(),
+  mockRequireSecurityRole: vi.fn(),
   mockGetInstance: vi.fn(),
   mockGetEventFieldValues: vi.fn(),
   mockGetSeriesOccurrences: vi.fn(),
@@ -20,24 +18,25 @@ const {
   mockSearchEvents: vi.fn(),
   mockAttachRoomCounts: vi.fn(),
   mockApplyCopy: vi.fn(),
-  mockUserGetInstance: vi.fn(),
-  mockGetUserIdByGuid: vi.fn(),
 }));
 
-vi.mock('@/lib/auth', () => ({
-  auth: { api: { getSession: mockGetSession } },
-}));
-
-vi.mock('next/headers', () => ({
-  headers: vi.fn().mockResolvedValue(new Headers()),
+/**
+ * The actions gate through AuthorizationService; the gate itself has its own
+ * tests in `authorizationService.test.ts`, so it is stubbed here.
+ */
+vi.mock('@/services/authorizationService', () => ({
+  AuthorizationService: {
+    getInstance: () => ({ requireSecurityRole: mockRequireSecurityRole }),
+  },
+  UnauthorizedError: class UnauthorizedError extends Error {
+    constructor(message = 'Not authorized') {
+      super(message);
+    }
+  },
 }));
 
 vi.mock('@/services/copyFromEventService', () => ({
   CopyFromEventService: { getInstance: mockGetInstance },
-}));
-
-vi.mock('@/services/userService', () => ({
-  UserService: { getInstance: mockUserGetInstance },
 }));
 
 import {
@@ -46,10 +45,7 @@ import {
   fetchSourceEventDetails,
   applyCopyFromEvent,
 } from './actions';
-
-const authedSession = {
-  user: { id: 'internal-id', userGuid: '550e8400-e29b-41d4-a716-446655440000' },
-};
+import { UnauthorizedError } from '@/services/authorizationService';
 
 const target = {
   Event_ID: 10,
@@ -70,7 +66,7 @@ const target = {
 describe('copy-from-event actions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetSession.mockResolvedValue(authedSession);
+    mockRequireSecurityRole.mockResolvedValue(42);
     mockGetInstance.mockResolvedValue({
       getEventFieldValues: mockGetEventFieldValues,
       getSeriesOccurrences: mockGetSeriesOccurrences,
@@ -79,19 +75,23 @@ describe('copy-from-event actions', () => {
       attachRoomCounts: mockAttachRoomCounts,
       applyCopy: mockApplyCopy,
     });
-    mockUserGetInstance.mockResolvedValue({ getUserIdByGuid: mockGetUserIdByGuid });
-    mockGetUserIdByGuid.mockResolvedValue(42);
     mockAttachRoomCounts.mockImplementation(async (events: unknown[]) => events);
   });
 
-  describe('auth guard', () => {
-    it('every action throws Unauthorized without a session', async () => {
-      mockGetSession.mockResolvedValue(null);
-      await expect(fetchCopyFromEventData(10)).rejects.toThrow('Unauthorized');
-      await expect(searchSourceEvents('x', 10)).rejects.toThrow('Unauthorized');
-      await expect(fetchSourceEventDetails(20)).rejects.toThrow('Unauthorized');
-      await expect(applyCopyFromEvent({ targetEventId: 10, sourceEventId: 20, scope: 'this', fields: {}, sourceEventRoomIds: [] })).rejects.toThrow('Unauthorized');
+  describe('authorization gate', () => {
+    it('every action refuses a caller without a security role', async () => {
+      mockRequireSecurityRole.mockRejectedValue(new UnauthorizedError());
+      await expect(fetchCopyFromEventData(10)).rejects.toThrow('Not authorized');
+      await expect(searchSourceEvents('x', 10)).rejects.toThrow('Not authorized');
+      await expect(fetchSourceEventDetails(20)).rejects.toThrow('Not authorized');
+      await expect(applyCopyFromEvent({ targetEventId: 10, sourceEventId: 20, scope: 'this', fields: {}, sourceEventRoomIds: [] })).rejects.toThrow('Not authorized');
       expect(mockGetInstance).not.toHaveBeenCalled();
+    });
+
+    it('gates reads as Events/read', async () => {
+      mockSearchEvents.mockResolvedValue([]);
+      await searchSourceEvents('x', 10);
+      expect(mockRequireSecurityRole).toHaveBeenCalledWith({ table: 'Events', operation: 'read' });
     });
   });
 
@@ -154,12 +154,12 @@ describe('copy-from-event actions', () => {
       sourceEventRoomIds: [1, 2],
     };
 
-    it('resolves the MP user id from the session and passes it to the service', async () => {
+    it('gates the write and leaves $userId attribution to the service', async () => {
       const ok = { success: true as const, occurrences: [], summary: { occurrenceCount: 0, fieldsUpdated: 0, roomsCreated: 0, roomsSkipped: 0, failed: 0 } };
       mockApplyCopy.mockResolvedValue(ok);
       const result = await applyCopyFromEvent(payload);
-      expect(mockGetUserIdByGuid).toHaveBeenCalledWith(authedSession.user.userGuid);
-      expect(mockApplyCopy).toHaveBeenCalledWith(payload, 42);
+      expect(mockRequireSecurityRole).toHaveBeenCalledWith({ table: 'Events', operation: 'update' });
+      expect(mockApplyCopy).toHaveBeenCalledWith(payload);
       expect(result).toBe(ok);
     });
 

@@ -1,4 +1,5 @@
 import { MPHelper } from '@/lib/providers/ministry-platform';
+import { AuthorizationService } from '@/services/authorizationService';
 import type {
   RegistrationEvent,
   RegistrationParticipant,
@@ -8,6 +9,17 @@ import type {
   MoveTargetEvent,
 } from '@/lib/dto';
 import type { ParticipationStatus } from '@/lib/dto';
+
+/**
+ * Every method gates, reads included (see .claude/references/security/README.md).
+ * For writes, the gate's return value is the ONLY source of `$userId`.
+ */
+function requireAccess(
+  table: string,
+  operation: 'read' | 'create' | 'update' | 'delete',
+): Promise<number> {
+  return AuthorizationService.getInstance().requireSecurityRole({ table, operation });
+}
 
 const PROMOCODE_NAMES = ['promocode', 'promocodes'];
 
@@ -42,6 +54,7 @@ export class EditRegistrationService {
   }
 
   async getRegistrationEvent(eventId: number): Promise<RegistrationEvent | null> {
+    await requireAccess('Events', 'read');
     const rows = await this.mp.getTableRecords<RegistrationEvent>({
       table: 'Events',
       select:
@@ -53,6 +66,7 @@ export class EditRegistrationService {
   }
 
   async getEventParticipants(eventId: number): Promise<RegistrationParticipant[]> {
+    await requireAccess('Event_Participants', 'read');
     return this.mp.getTableRecords<RegistrationParticipant>({
       table: 'Event_Participants',
       select: PARTICIPANT_SELECT,
@@ -62,6 +76,7 @@ export class EditRegistrationService {
   }
 
   async getEventParticipants_byId(eventParticipantId: number): Promise<RegistrationParticipant | null> {
+    await requireAccess('Event_Participants', 'read');
     const rows = await this.mp.getTableRecords<RegistrationParticipant>({
       table: 'Event_Participants',
       select: PARTICIPANT_SELECT,
@@ -72,6 +87,7 @@ export class EditRegistrationService {
   }
 
   async getParticipationStatuses(): Promise<ParticipationStatus[]> {
+    await requireAccess('Participation_Statuses', 'read');
     return this.mp.getTableRecords<ParticipationStatus>({
       table: 'Participation_Statuses',
       select: 'Participation_Status_ID, Participation_Status',
@@ -80,6 +96,7 @@ export class EditRegistrationService {
   }
 
   async getProductOptionGroups(productId: number): Promise<ProductOptionGroup[]> {
+    await requireAccess('Product_Option_Groups', 'read');
     const groups = await this.mp.getTableRecords<ProductOptionGroup>({
       table: 'Product_Option_Groups',
       select: 'Product_Option_Group_ID, Product_ID, Option_Group_Name, Mutually_Exclusive, Required',
@@ -92,6 +109,7 @@ export class EditRegistrationService {
   }
 
   async getProductOptionPrices(groupIds: number[]): Promise<ProductOptionPrice[]> {
+    await requireAccess('Product_Option_Prices', 'read');
     if (groupIds.length === 0) return [];
     return this.mp.getTableRecords<ProductOptionPrice>({
       table: 'Product_Option_Prices',
@@ -102,6 +120,7 @@ export class EditRegistrationService {
   }
 
   async getInvoiceDetails(eventParticipantId: number): Promise<InvoiceDetailRow[]> {
+    await requireAccess('Invoice_Detail', 'read');
     return this.mp.getTableRecords<InvoiceDetailRow>({
       table: 'Invoice_Detail',
       select: 'Invoice_Detail_ID, Invoice_ID, Event_Participant_ID, Product_ID, Product_Option_Price_ID, Line_Total, Item_Quantity',
@@ -110,6 +129,7 @@ export class EditRegistrationService {
   }
 
   async getAllInvoiceDetailsForEvent(eventId: number): Promise<InvoiceDetailRow[]> {
+    await requireAccess('Invoice_Detail', 'read');
     // Filter via the Event_Participants FK rather than an `Event_Participant_ID IN (...)`
     // list. For large events that IN list produces a GET query string that exceeds the
     // MP web server's max query-string length, which is rejected with an HTML 404 before
@@ -127,8 +147,8 @@ export class EditRegistrationService {
   async updateParticipationStatus(
     eventParticipantId: number,
     participationStatusId: number,
-    userId: number,
   ): Promise<void> {
+    const $userId = await requireAccess('Event_Participants', 'update');
     await this.mp.updateTableRecords(
       'Event_Participants',
       [
@@ -137,7 +157,7 @@ export class EditRegistrationService {
           Participation_Status_ID: participationStatusId,
         },
       ],
-      { $userId: userId },
+      { $userId },
     );
   }
 
@@ -145,8 +165,8 @@ export class EditRegistrationService {
     invoiceDetailId: number,
     productOptionPriceId: number,
     lineTotal: number,
-    userId: number,
   ): Promise<void> {
+    const $userId = await requireAccess('Invoice_Detail', 'update');
     await this.mp.updateTableRecords(
       'Invoice_Detail',
       [
@@ -156,18 +176,18 @@ export class EditRegistrationService {
           Line_Total: lineTotal,
         },
       ],
-      { $userId: userId },
+      { $userId },
     );
   }
 
   async recalculateInvoiceTotal(
     invoiceId: number,
-    userId: number,
   ): Promise<{
     newTotal: number;
     totalPaid: number;
     invoiceGuid: string;
   } | null> {
+    const $userId = await requireAccess('Invoices', 'update');
     const allDetails = await this.mp.getTableRecords<{
       Invoice_Detail_ID: number;
       Line_Total: number;
@@ -217,7 +237,7 @@ export class EditRegistrationService {
           Invoice_Status_ID: statusId,
         },
       ],
-      { $userId: userId },
+      { $userId },
     );
 
     return { newTotal, totalPaid, invoiceGuid };
@@ -227,8 +247,8 @@ export class EditRegistrationService {
     invoiceId: number,
     invoiceDetailId: number,
     newLineTotal: number,
-    userId: number,
   ): Promise<void> {
+    const $userId = await requireAccess('Payment_Detail', 'update');
     // Find payment details linked to this invoice detail
     const paymentDetails = await this.mp.getTableRecords<{
       Payment_Detail_ID: number;
@@ -263,7 +283,7 @@ export class EditRegistrationService {
           Payment_Amount: newPaymentAmount,
         },
       ],
-      { $userId: userId },
+      { $userId },
     );
 
     // Recalculate the parent Payment_Total
@@ -284,11 +304,12 @@ export class EditRegistrationService {
           Payment_Total: newPaymentTotal,
         },
       ],
-      { $userId: userId },
+      { $userId },
     );
   }
 
   async getMoveTargetEvents(event: RegistrationEvent): Promise<MoveTargetEvent[]> {
+    await requireAccess('Events', 'read');
     const conditions = [
       `Event_ID <> ${event.Event_ID}`,
       `Program_ID = ${event.Program_ID}`,
@@ -314,8 +335,8 @@ export class EditRegistrationService {
   async moveParticipantToEvent(
     eventParticipantId: number,
     newEventId: number,
-    userId: number,
   ): Promise<void> {
+    const $userId = await requireAccess('Event_Participants', 'update');
     await this.mp.updateTableRecords(
       'Event_Participants',
       [
@@ -324,15 +345,15 @@ export class EditRegistrationService {
           Event_ID: newEventId,
         },
       ],
-      { $userId: userId },
+      { $userId },
     );
   }
 
   async updateInvoiceDetailProduct(
     invoiceDetailIds: number[],
     newProductId: number,
-    userId: number,
   ): Promise<void> {
+    const $userId = await requireAccess('Invoice_Detail', 'update');
     if (invoiceDetailIds.length === 0) return;
     await this.mp.updateTableRecords(
       'Invoice_Detail',
@@ -340,7 +361,7 @@ export class EditRegistrationService {
         Invoice_Detail_ID: id,
         Product_ID: newProductId,
       })),
-      { $userId: userId },
+      { $userId },
     );
   }
 
@@ -349,8 +370,8 @@ export class EditRegistrationService {
     newProductId: number,
     newProductOptionPriceId: number,
     newLineTotal: number,
-    userId: number,
   ): Promise<void> {
+    const $userId = await requireAccess('Invoice_Detail', 'update');
     await this.mp.updateTableRecords(
       'Invoice_Detail',
       [
@@ -361,11 +382,12 @@ export class EditRegistrationService {
           Line_Total: newLineTotal,
         },
       ],
-      { $userId: userId },
+      { $userId },
     );
   }
 
   async getProductOptionPriceById(priceId: number): Promise<{ Add_to_Group: number | null } | null> {
+    await requireAccess('Product_Option_Prices', 'read');
     const rows = await this.mp.getTableRecords<{ Product_Option_Price_ID: number; Add_to_Group: number | null }>({
       table: 'Product_Option_Prices',
       select: 'Product_Option_Price_ID, Add_to_Group',
@@ -379,8 +401,8 @@ export class EditRegistrationService {
     eventParticipantId: number,
     groupParticipantId: number | null,
     newProductOptionPriceId: number,
-    userId: number,
   ): Promise<void> {
+    const $userId = await requireAccess('Event_Participants', 'update');
     const optionPrice = await this.getProductOptionPriceById(newProductOptionPriceId);
     if (!optionPrice) return;
 
@@ -396,7 +418,7 @@ export class EditRegistrationService {
           Group_ID: newGroupId,
         },
       ],
-      { $userId: userId },
+      { $userId },
     );
 
     // 2. Update the linked Group_Participants record to match the same group
@@ -409,7 +431,7 @@ export class EditRegistrationService {
             Group_ID: newGroupId,
           },
         ],
-        { $userId: userId },
+        { $userId },
       );
     }
   }
