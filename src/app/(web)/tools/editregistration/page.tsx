@@ -1,5 +1,5 @@
 import { EditRegistration } from './edit-registration';
-import { parseToolParams } from '@/lib/tool-params';
+import { parseToolParams } from '@/lib/tool-params.server';
 
 interface EditRegistrationPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;

@@ -17,7 +17,10 @@ const TOOLS = [
   { name: 'Address Labels', href: '/tools/addresslabels' },
   { name: 'Group Wizard', href: '/tools/groupwizard' },
   { name: 'Field Management', href: '/tools/fieldmanagement' },
+  { name: 'Event Checkin', href: '/tools/eventcheckin' },
+  { name: 'Edit Registration', href: '/tools/editregistration' },
   { name: 'Add/Edit Family', href: '/tools/addeditfamily' },
+  { name: 'Copy From Event', href: '/tools/copyfromevent' },
 ];
 
 describe('Home', () => {
