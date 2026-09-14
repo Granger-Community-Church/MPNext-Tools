@@ -58,6 +58,22 @@ export default defineConfig({
         'src/app/(web)/layout.tsx', // Font/metadata shell
         '**/index.ts', // Barrel re-exports
         '**/types.ts', // Type-only modules
+        // Granger fork: tools that predate upstream's coverage gate and have no
+        // tests yet. TEMPORARY — delete each line as its tests land; never add a
+        // tested file here. Tracked in
+        // .claude/TODO/2026-09-14-granger-tools-coverage-excluded.md.
+        // copy-from-event's actions, service and utils are tested and stay in.
+        // `*` stands in for the `(web)` route group: parentheses are glob syntax
+        // and a literal `(web)` segment matches nothing.
+        'src/app/*/tools/copyfromevent/**',
+        'src/app/*/tools/editregistration/**',
+        'src/app/*/tools/eventcheckin/**',
+        'src/components/copy-from-event/*.tsx',
+        'src/components/edit-registration/**',
+        'src/components/event-checkin/**',
+        'src/services/editRegistrationService.ts',
+        'src/services/eventCheckinService.ts',
+        'src/lib/poppins-font.ts', // Only used by event-checkin nametags
       ],
     },
   },

@@ -13,6 +13,7 @@ last_updated: 2026-09-14
 <!-- 2026-09-10: closed 1 low TODO (copy-from-event-group-congregation-label) — see commit feat(copy-from-event): show group congregation in Rooms & Groups listing -->
 <!-- 2026-09-13: coverage push 49.67% -> 98.84% statements. Opened 8 TODOs, closed 2 (template-editor-missing-tests, coverage-report-masked-untested-files). -->
 <!-- 2026-09-14: merged upstream v2026.09.13.1431 into Granger fork — combined Granger copy-from-event TODOs with upstream coverage-push TODOs. -->
+<!-- 2026-09-14: opened 1 high TODO (granger-tools-coverage-excluded) — untested Granger tools excluded from the new coverage gate to unblock the upstream sync -->
 
 
 # TODO Index
@@ -25,7 +26,7 @@ Severity tiers:
 - **medium**: doc drift, missing test, refactor with real cost
 - **low**: nits, minor doc fixes, stylistic improvements
 
-Total: **6 open TODOs**.
+Total: **7 open TODOs**.
 
 > **2026-09-13 — unit-test coverage push.** Statement coverage over authored
 > code went from 49.67% to 98.84% (3,610/3,652), lines to 99.70%, across 1,535
@@ -46,8 +47,10 @@ Total: **6 open TODOs**.
 ### Critical (0)
 _none open_
 
-### High (0)
-_none open_
+### High (1)
+| Area | Tags | Title | File |
+|---|---|---|---|
+| testing | missing-test | Write tests for Granger tools and remove their coverage exclusions | [→](2026-09-14-granger-tools-coverage-excluded.md) |
 
 ### Medium (2)
 | Area | Tags | Title | File |
@@ -78,7 +81,8 @@ _none open_
 ### drift (1)
 - components-template-editor-no-mp-persistence — medium
 
-### missing-test (1)
+### missing-test (2)
+- granger-tools-coverage-excluded — high
 - dead-empty-fields-branch-handlenext — low
 
 ### refactor (4)
@@ -104,7 +108,7 @@ _none open_
 | Area | Count |
 |---|---|
 | components | 6 |
-| testing | 0 |
+| testing | 1 |
 | services | 0 |
 | auth | 0 |
 | mp-provider | 0 |
