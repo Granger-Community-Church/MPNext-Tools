@@ -10,25 +10,27 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
  *
  * Covers:
  * 1. Already-signed-in short-circuit: session exists → window.location.href = callbackUrl
- * 2. Not-signed-in happy path: session null → signIn.oauth2 with providerId + callbackURL
- * 3. Error fall-through: getSession rejects → still calls signIn.oauth2
+ * 2. Not-signed-in happy path: session null → signIn.social with provider + callbackURL
+ * 3. Error fall-through: getSession rejects → still calls signIn.social
  * 4. callbackUrl defaults to "/" when the query param is absent
  * 5. ?error=access_denied renders the error card (and does NOT auto-start OAuth)
- * 6. Retry button re-invokes signIn.oauth2 with the correct callbackURL
+ * 6. Retry button re-invokes signIn.social with the correct callbackURL
  * 7. 10s redirect-timeout flips to the error state when no navigation happens
  */
 
-const { mockGetSession, mockSignInOauth2, mockUseSearchParams } = vi.hoisted(() => ({
+const { mockGetSession, mockSignInSocial, mockUseSearchParams } = vi.hoisted(() => ({
   mockGetSession: vi.fn(),
-  mockSignInOauth2: vi.fn(),
+  mockSignInSocial: vi.fn(),
   mockUseSearchParams: vi.fn(),
 }));
 
 vi.mock('@/lib/auth-client', () => ({
   authClient: {
     getSession: mockGetSession,
+    // Better Auth 1.7 removed `signIn.oauth2` with the genericOAuthClient
+    // plugin; generic providers now go through core `signIn.social`.
     signIn: {
-      oauth2: mockSignInOauth2,
+      social: mockSignInSocial,
     },
   },
 }));
@@ -37,12 +39,25 @@ vi.mock('next/navigation', () => ({
   useSearchParams: mockUseSearchParams,
 }));
 
-import SignIn from './page';
+import SignIn, { dynamic } from './page';
+import { sanitizeCallbackUrl } from './sign-in-content';
 
 function setSearchParams(params: Record<string, string>) {
   const sp = new URLSearchParams(params);
   mockUseSearchParams.mockReturnValue(sp);
 }
+
+/**
+ * These tests deliberately drive failure paths, and the code under test logs
+ * them on purpose. Silence the channel so a real, unexpected error still
+ * stands out in the runner output instead of drowning in expected noise.
+ * `mockImplementation` keeps the spy recording, so assertions on what was
+ * logged still work.
+ */
+beforeEach(() => {
+  vi.spyOn(console, 'error').mockImplementation(() => {});
+  vi.spyOn(console, 'warn').mockImplementation(() => {});
+});
 
 describe('SignIn page', () => {
   let originalLocation: Location;
@@ -88,7 +103,7 @@ describe('SignIn page', () => {
     await waitFor(() => {
       expect(locationHref).toBe('/tools/addresslabels?s=123');
     });
-    expect(mockSignInOauth2).not.toHaveBeenCalled();
+    expect(mockSignInSocial).not.toHaveBeenCalled();
   });
 
   it('initiates OAuth sign-in with providerId + callbackURL when not signed in', async () => {
@@ -98,8 +113,8 @@ describe('SignIn page', () => {
     render(<SignIn />);
 
     await waitFor(() => {
-      expect(mockSignInOauth2).toHaveBeenCalledWith({
-        providerId: 'ministry-platform',
+      expect(mockSignInSocial).toHaveBeenCalledWith({
+        provider: 'ministryplatform',
         callbackURL: '/tools/template?q=a',
       });
     });
@@ -113,8 +128,8 @@ describe('SignIn page', () => {
     render(<SignIn />);
 
     await waitFor(() => {
-      expect(mockSignInOauth2).toHaveBeenCalledWith({
-        providerId: 'ministry-platform',
+      expect(mockSignInSocial).toHaveBeenCalledWith({
+        provider: 'ministryplatform',
         callbackURL: '/tools/groupwizard',
       });
     });
@@ -128,8 +143,8 @@ describe('SignIn page', () => {
     render(<SignIn />);
 
     await waitFor(() => {
-      expect(mockSignInOauth2).toHaveBeenCalledWith({
-        providerId: 'ministry-platform',
+      expect(mockSignInSocial).toHaveBeenCalledWith({
+        provider: 'ministryplatform',
         callbackURL: '/',
       });
     });
@@ -150,23 +165,23 @@ describe('SignIn page', () => {
     ).toBeInTheDocument();
     // Give any pending microtasks a chance to run — OAuth must still NOT fire.
     await Promise.resolve();
-    expect(mockSignInOauth2).not.toHaveBeenCalled();
+    expect(mockSignInSocial).not.toHaveBeenCalled();
   });
 
-  it('retry button re-invokes signIn.oauth2 with the callbackURL', async () => {
+  it('retry button re-invokes signIn.social with the callbackURL', async () => {
     setSearchParams({ callbackUrl: '/tools/template', error: 'access_denied' });
     mockGetSession.mockResolvedValue({ data: null });
 
     render(<SignIn />);
 
     const retry = await screen.findByRole('button', { name: /retry sign-in/i });
-    expect(mockSignInOauth2).not.toHaveBeenCalled();
+    expect(mockSignInSocial).not.toHaveBeenCalled();
 
     fireEvent.click(retry);
 
     await waitFor(() => {
-      expect(mockSignInOauth2).toHaveBeenCalledWith({
-        providerId: 'ministry-platform',
+      expect(mockSignInSocial).toHaveBeenCalledWith({
+        provider: 'ministryplatform',
         callbackURL: '/tools/template',
       });
     });
@@ -179,9 +194,9 @@ describe('SignIn page', () => {
     try {
       setSearchParams({ callbackUrl: '/' });
       mockGetSession.mockResolvedValue({ data: null });
-      // oauth2 "succeeds" (no throw, no reject) but never navigates — this
+      // signIn.social "succeeds" (no throw, no reject) but never navigates — this
       // mirrors a hung provider redirect.
-      mockSignInOauth2.mockReturnValue(undefined);
+      mockSignInSocial.mockReturnValue(undefined);
 
       render(<SignIn />);
 
@@ -191,7 +206,7 @@ describe('SignIn page', () => {
         await Promise.resolve();
         await Promise.resolve();
       });
-      expect(mockSignInOauth2).toHaveBeenCalledTimes(1);
+      expect(mockSignInSocial).toHaveBeenCalledTimes(1);
       expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 
       // Advance past the 10s safety timeout and flush resulting state updates.
@@ -207,5 +222,210 @@ describe('SignIn page', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+/**
+ * F3 — open redirect via `?callbackUrl=`.
+ *
+ * `/signin?callbackUrl=https://evil.example` bounced the user off-site from a
+ * URL that looks exactly like this app's own login page.
+ */
+describe('sanitizeCallbackUrl', () => {
+  it.each([
+    ['https://evil.example', '/'],
+    ['http://evil.example/x', '/'],
+    ['//evil.example', '/'],
+    ['//evil.example/path', '/'],
+    ['/\\evil.example', '/'],  // JS string: /\evil.example
+    ['javascript:alert(1)', '/'],
+    ['', '/'],
+    [null, '/'],
+    [undefined, '/'],
+  ])('rejects %s', (input, expected) => {
+    expect(sanitizeCallbackUrl(input as string | null | undefined)).toBe(expected);
+  });
+
+  it.each([
+    '/',
+    '/tools/addresslabels',
+    '/tools/addresslabels?s=123&pageID=292',
+    '/tools/groupwizard/abc?tab=members',
+  ])('preserves the legitimate deep link %s', (input) => {
+    // A sanitizer that breaks deep links gets reverted, so pin these too.
+    expect(sanitizeCallbackUrl(input)).toBe(input);
+  });
+});
+
+/**
+ * F9 — the nonce-based CSP forces this route to render per-request.
+ *
+ * A prerendered page has no request, therefore no nonce, so under enforcement
+ * its bootstrap script is blocked and it never hydrates. For /signin — whose
+ * entire job happens in a client effect — that is a permanent spinner.
+ */
+describe('SignIn route rendering mode', () => {
+  it('opts out of static prerendering', () => {
+    expect(dynamic).toBe('force-dynamic');
+  });
+
+  it('is NOT a client module — route segment config is ignored in one', async () => {
+    // The trap: `export const dynamic` sits inert in a "use client" module. The
+    // build output still reports the route as static and the page still fails
+    // to hydrate, with nothing to explain why. Both halves have to be pinned.
+    const fs = await import('node:fs/promises');
+    const path = await import('node:path');
+    const source = await fs.readFile(
+      path.resolve(process.cwd(), 'src/app/signin/page.tsx'),
+      'utf-8',
+    );
+    expect(source).not.toMatch(/^\s*["']use client["']/m);
+  });
+
+  it('keeps the interactive body in a separate client module', async () => {
+    const fs = await import('node:fs/promises');
+    const path = await import('node:path');
+    const source = await fs.readFile(
+      path.resolve(process.cwd(), 'src/app/signin/sign-in-content.tsx'),
+      'utf-8',
+    );
+    expect(source).toMatch(/^["']use client["']/m);
+  });
+});
+
+/**
+ * Error-code classification.
+ *
+ * `describeOAuthError` is not exported, so it is exercised through the rendered
+ * error card. Each branch maps a provider error code to the guidance the user
+ * actually reads — getting this wrong tells people to retry something that
+ * will never succeed, or to contact support for a cancelled sign-in.
+ */
+describe('SignIn OAuth error classification', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetSession.mockResolvedValue(null);
+  });
+
+  it.each([
+    'invalid_request',
+    'invalid_client',
+    'invalid_grant',
+    'unauthorized_client',
+    'unsupported_response_type',
+    'invalid_scope',
+  ])('describes %s as a request rejected by the provider', async (code) => {
+    setSearchParams({ error: code });
+
+    render(<SignIn />);
+
+    expect(
+      await screen.findByText(/sign-in request was rejected by the provider/i),
+    ).toBeInTheDocument();
+    expect(mockSignInSocial).not.toHaveBeenCalled();
+  });
+
+  it.each(['server_error', 'temporarily_unavailable'])(
+    'describes %s as a temporary provider outage',
+    async (code) => {
+      setSearchParams({ error: code });
+
+      render(<SignIn />);
+
+      expect(
+        await screen.findByText(/temporarily unavailable\. please retry in a moment/i),
+      ).toBeInTheDocument();
+    },
+  );
+
+  it('falls back to a generic message that names an unrecognised code', async () => {
+    setSearchParams({ error: 'some_unmapped_code' });
+
+    render(<SignIn />);
+
+    expect(await screen.findByText(/sign-in failed \(some_unmapped_code\)/i)).toBeInTheDocument();
+  });
+
+  it('describes access_denied as a cancellation the user can retry', async () => {
+    setSearchParams({ error: 'access_denied' });
+
+    render(<SignIn />);
+
+    expect(await screen.findByText(/sign-in was cancelled/i)).toBeInTheDocument();
+  });
+});
+
+/**
+ * Failure to even START the OAuth handshake.
+ *
+ * `signIn.social()` can fail two ways: it can throw synchronously, or it can
+ * return a promise that rejects. Both must clear the redirect timeout, release
+ * the once-only guard, and surface a retryable error — otherwise the user is
+ * left on a spinner with no way forward.
+ */
+describe('SignIn when signIn.social fails to start', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetSession.mockResolvedValue(null);
+    setSearchParams({});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('surfaces a retryable error when signIn.social throws synchronously', async () => {
+    mockSignInSocial.mockImplementation(() => {
+      throw new Error('provider exploded');
+    });
+
+    render(<SignIn />);
+
+    expect(await screen.findByText(/failed to start sign-in/i)).toBeInTheDocument();
+  });
+
+  it('surfaces a retryable error when the returned promise rejects', async () => {
+    mockSignInSocial.mockRejectedValue(new Error('network down'));
+
+    render(<SignIn />);
+
+    expect(await screen.findByText(/failed to start sign-in/i)).toBeInTheDocument();
+  });
+
+  it('allows a retry after a start failure, re-invoking signIn.social', async () => {
+    mockSignInSocial.mockRejectedValueOnce(new Error('network down'));
+
+    render(<SignIn />);
+    await screen.findByText(/failed to start sign-in/i);
+
+    const callsBeforeRetry = mockSignInSocial.mock.calls.length;
+    mockSignInSocial.mockResolvedValueOnce(undefined);
+    fireEvent.click(screen.getByRole('button', { name: /retry/i }));
+
+    await waitFor(() =>
+      expect(mockSignInSocial.mock.calls.length).toBeGreaterThan(callsBeforeRetry),
+    );
+  });
+
+  it('tolerates a non-thenable return value without throwing', async () => {
+    // The source guards on `typeof result.catch === "function"`; a void return
+    // must not crash the effect.
+    mockSignInSocial.mockReturnValue(undefined);
+
+    render(<SignIn />);
+
+    await waitFor(() => expect(mockSignInSocial).toHaveBeenCalled());
+    expect(screen.queryByText(/failed to start sign-in/i)).not.toBeInTheDocument();
+  });
+});
+
+describe('SignInFallback', () => {
+  it('renders a loading state for the Suspense boundary', async () => {
+    const { SignInFallback } = await import('./sign-in-content');
+
+    render(<SignInFallback />);
+
+    expect(screen.getByRole('heading', { name: /loading/i })).toBeInTheDocument();
   });
 });

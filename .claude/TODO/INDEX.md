@@ -1,7 +1,7 @@
 ---
 title: TODO Index
 type: index
-last_updated: 2026-09-10
+last_updated: 2026-09-14
 ---
 
 <!-- 2026-04-18: closed 3 routing TODOs (proxy-api-whitelist, signin-no-error-ui, home-page-roundtrip) — see commit fix(routing): tighten proxy API whitelist, add signin error UI, optimize /home redirect -->
@@ -11,18 +11,34 @@ last_updated: 2026-09-10
 <!-- 2026-05-21: closed 1 critical TODO (xmldom-critical-vulnerability) — replaced docxtemplater-image-module-free with maintained docxtemplater-image (uses @xmldom/xmldom@^0.9.7) -->
 <!-- 2026-09-10: opened 3 low TODOs (copy-from-event-make-unique-v2, copy-from-event-file-attachments-v2, copy-from-event-group-congregation-label) — Copy From Event follow-ups -->
 <!-- 2026-09-10: closed 1 low TODO (copy-from-event-group-congregation-label) — see commit feat(copy-from-event): show group congregation in Rooms & Groups listing -->
+<!-- 2026-09-13: coverage push 49.67% -> 98.84% statements. Opened 8 TODOs, closed 2 (template-editor-missing-tests, coverage-report-masked-untested-files). -->
+<!-- 2026-09-14: merged upstream v2026.09.13.1431 into Granger fork — combined Granger copy-from-event TODOs with upstream coverage-push TODOs. -->
+<!-- 2026-09-14: opened 1 high TODO (granger-tools-coverage-excluded) — untested Granger tools excluded from the new coverage gate to unblock the upstream sync -->
 
 
 # TODO Index
 
-All open TODOs dropped during the context-engineering review (2026-04-17) and any later additions. Severity tiers:
+Open TODOs from the context-engineering review (2026-04-17) and later additions.
+Severity tiers:
 
 - **critical**: security hole, data loss, auth bypass
 - **high**: broken behavior, convention violation causing bugs
 - **medium**: doc drift, missing test, refactor with real cost
 - **low**: nits, minor doc fixes, stylistic improvements
 
-Total: **5 open TODOs**.
+Total: **7 open TODOs**.
+
+> **2026-09-13 — unit-test coverage push.** Statement coverage over authored
+> code went from 49.67% to 98.84% (3,610/3,652), lines to 99.70%, across 1,535
+> tests in 116 files. Most of the items below were opened during that work,
+> found by reading code while writing tests for it. A follow-up pass cleaned
+> the runner output from 1,507 lines to 17 with zero warnings.
+>
+> **2026-09-13 (later) — remediation.** All three high-severity items and the
+> CI gap are fixed and closed; see each file's Resolution section. CI now runs
+> lint and `tsc --noEmit` as required steps, and installs with `npm ci`.
+> Everything still open is `medium` or below, and all of it sits in
+> `src/components`.
 
 ---
 
@@ -31,21 +47,24 @@ Total: **5 open TODOs**.
 ### Critical (0)
 _none open_
 
-### High
-_none open_
+### High (1)
+| Area | Tags | Title | File |
+|---|---|---|---|
+| testing | missing-test | Write tests for Granger tools and remove their coverage exclusions | [→](2026-09-14-granger-tools-coverage-excluded.md) |
 
-### Medium (3)
+### Medium (2)
 | Area | Tags | Title | File |
 |---|---|---|---|
 | components | bug, drift | Template editor ignores pageID/recordID (no MP persistence) | [→](2026-04-17-components-template-editor-no-mp-persistence.md) |
 | components | bug, refactor | Merge tokens `{{Field_Name}}` have no resolver anywhere | [→](2026-04-17-components-template-editor-merge-token-resolver.md) |
-| components | missing-test | No tests for `src/components/template-editor/` | [→](2026-04-17-components-template-editor-missing-tests.md) |
 
-### Low (2)
+### Low (4)
 | Area | Tags | Title | File |
 |---|---|---|---|
 | components | refactor | Copy From Event v2 — "make unique" clone of shared Product / Form / Registrant Group | [→](2026-09-10-copy-from-event-make-unique-v2.md) |
 | components | refactor | Copy From Event v2 — copy file attachments from the source event | [→](2026-09-10-copy-from-event-file-attachments-v2.md) |
+| components | bug | Add/Edit Family search: "No contacts found" empty state never renders | [→](2026-09-13-search-empty-state-never-renders.md) |
+| components | refactor, missing-test | Unreachable "empty STEP_FIELDS" branch in `GroupWizard.handleNext` | [→](2026-09-13-dead-empty-fields-branch-handlenext.md) |
 
 ---
 
@@ -54,22 +73,30 @@ _none open_
 ### security (0)
 _none open_
 
-### bug (2)
-_see severity sections above; tag appears on items involving a functional defect_
+### bug (3)
+- components-template-editor-no-mp-persistence — medium
+- components-template-editor-merge-token-resolver — medium
+- search-empty-state-never-renders — low
 
-### drift (2)
-_doc-to-code or doc-to-doc divergence; mostly resolved inline by Phase 4 verification_
+### drift (1)
+- components-template-editor-no-mp-persistence — medium
 
-### missing-test (1)
-- components-template-editor-missing-tests — medium
+### missing-test (2)
+- granger-tools-coverage-excluded — high
+- dead-empty-fields-branch-handlenext — low
 
-### refactor (3)
+### refactor (4)
 _improvements with real value but no functional defect_
+- components-template-editor-merge-token-resolver — medium
 - copy-from-event-make-unique-v2 — low
 - copy-from-event-file-attachments-v2 — low
+- dead-empty-fields-branch-handlenext — low
 
-### doc (1)
-_documentation-only tasks, mostly retiring old flat files or updating CLAUDE.md / README.md_
+### testing (0)
+_none open_
+
+### doc (0)
+_none open_
 
 ### perf (0)
 _none open_
@@ -80,19 +107,36 @@ _none open_
 
 | Area | Count |
 |---|---|
-| components | 5 |
+| components | 6 |
+| testing | 1 |
+| services | 0 |
 | auth | 0 |
 | mp-provider | 0 |
-| services | 0 |
 | utils | 0 |
 | routing | 0 |
 | mp-schema | 0 |
-| testing | 0 |
 | contexts | 0 |
 | dto-constants | 0 |
 | doc (cross-cutting) | 0 |
 
 ---
 
+## Recently resolved
+
+| Date | Title | File |
+|---|---|---|
+| 2026-09-13 | Coverage config omitted `coverage.include`, hiding every untested file | [→](2026-09-13-testing-coverage-report-masked-untested-files.md) |
+| 2026-09-13 | No tests for `src/components/template-editor/` | [→](2026-04-17-components-template-editor-missing-tests.md) |
+| 2026-09-13 | `vitest.config.ts` loaded as CommonJS (renamed to `.mts`) | [→](2026-09-13-testing-vitest-config-loaded-as-cjs.md) |
+| 2026-09-13 | Radix Select fields switched uncontrolled -> controlled | [→](2026-09-13-components-select-uncontrolled-to-controlled.md) |
+| 2026-09-13 | Unvalidated numeric fields reaching MP `$filter` strings | [→](2026-09-13-unvalidated-envelope-donor-ids-in-filter.md) |
+| 2026-09-13 | `removeGroup` dropped a non-empty group's fields from the save payload | [→](2026-09-13-removegroup-order-guard-mismatch.md) |
+| 2026-09-13 | Raw docxtemplater error logged household addresses | [→](2026-09-13-mergetemplate-logs-address-pii-on-error.md) |
+| 2026-09-13 | `AddEditFamilyPage` logged the raw error object | [→](2026-09-13-page-logs-raw-error-object.md) |
+| 2026-09-13 | No type-check gate in CI (also `npm ci`, lint, concurrency) | [→](2026-09-13-testing-no-typecheck-gate-in-ci.md) |
+
+---
+
 ## Schema
-Every TODO follows [`SCHEMA.md`](SCHEMA.md) with required `severity`, `tags`, `area`, `files`, `discovered`, `discovered_by`, `status` frontmatter.
+Every TODO follows [`SCHEMA.md`](SCHEMA.md) with required `severity`, `tags`,
+`area`, `files`, `discovered`, `discovered_by`, `status` frontmatter.

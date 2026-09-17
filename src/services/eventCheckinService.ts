@@ -1,9 +1,21 @@
 import { MPHelper } from '@/lib/providers/ministry-platform';
+import { AuthorizationService } from '@/services/authorizationService';
 import type {
   EventSummary,
   EventParticipantRow,
   ParticipationStatus,
 } from '@/lib/dto';
+
+/**
+ * Every method gates, reads included (see .claude/references/security/README.md).
+ * For writes, the gate's return value is the ONLY source of `$userId`.
+ */
+function requireAccess(
+  table: string,
+  operation: 'read' | 'create' | 'update' | 'delete',
+): Promise<number> {
+  return AuthorizationService.getInstance().requireSecurityRole({ table, operation });
+}
 
 const PARTICIPANT_SELECT = [
   'Event_Participant_ID',
@@ -36,6 +48,7 @@ export class EventCheckinService {
   }
 
   async getEventSummary(eventId: number): Promise<EventSummary | null> {
+    await requireAccess('Events', 'read');
     const rows = await this.mp.getTableRecords<EventSummary>({
       table: 'Events',
       select: [
@@ -53,6 +66,7 @@ export class EventCheckinService {
   }
 
   async getEventParticipants(eventId: number): Promise<EventParticipantRow[]> {
+    await requireAccess('Event_Participants', 'read');
     return this.mp.getTableRecords<EventParticipantRow>({
       table: 'Event_Participants',
       select: PARTICIPANT_SELECT,
@@ -62,6 +76,7 @@ export class EventCheckinService {
   }
 
   async getParticipationStatuses(): Promise<ParticipationStatus[]> {
+    await requireAccess('Participation_Statuses', 'read');
     return this.mp.getTableRecords<ParticipationStatus>({
       table: 'Participation_Statuses',
       select: 'Participation_Status_ID, Participation_Status',
@@ -74,12 +89,13 @@ export class EventCheckinService {
     participationStatusId: number,
     timeIn: string | null,
   ): Promise<void> {
+    const $userId = await requireAccess('Event_Participants', 'update');
     const records = eventParticipantIds.map((id) => ({
       Event_Participant_ID: id,
       Participation_Status_ID: participationStatusId,
       ...(timeIn !== null ? { Time_In: timeIn } : {}),
     }));
 
-    await this.mp.updateTableRecords('Event_Participants', records);
+    await this.mp.updateTableRecords('Event_Participants', records, { $userId });
   }
 }

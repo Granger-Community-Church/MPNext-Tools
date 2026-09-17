@@ -1,9 +1,7 @@
 'use server';
 
-import { auth } from '@/lib/auth';
-import { headers } from 'next/headers';
+import { AuthorizationService } from '@/services/authorizationService';
 import { EditRegistrationService } from '@/services/editRegistrationService';
-import { getCurrentUserIdFromSession } from '@/components/shared-actions/user';
 import type {
   RegistrationEvent,
   RegistrationParticipant,
@@ -16,10 +14,20 @@ import type {
 } from '@/lib/dto';
 import type { ParticipationStatus } from '@/lib/dto';
 
-async function getSession() {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user?.id) throw new Error('Unauthorized');
-  return session;
+/**
+ * Authorization gate for this feature's server actions.
+ *
+ * A server action is a callable POST endpoint whether or not the page that
+ * renders it was ever fetched, so the tools layout gate is not sufficient on
+ * its own. "A session exists" proves nothing here: MP's OIDC endpoint
+ * authenticates ANY dp_Users record, and this app reads MP with its own service
+ * account. The service gates again and owns `$userId` attribution.
+ */
+async function requireAccess(
+  table: string,
+  operation: 'read' | 'create' | 'update' | 'delete',
+): Promise<number> {
+  return AuthorizationService.getInstance().requireSecurityRole({ table, operation });
 }
 
 export async function fetchRegistrationData(eventId: number): Promise<{
@@ -30,7 +38,7 @@ export async function fetchRegistrationData(eventId: number): Promise<{
   productOptionGroups: ProductOptionGroup[];
   productOptionPrices: ProductOptionPrice[];
 }> {
-  await getSession();
+  await requireAccess('Event_Participants', 'read');
 
   const service = await EditRegistrationService.getInstance();
   const [event, participants, statuses] = await Promise.all([
@@ -95,7 +103,7 @@ export async function fetchParticipantDetails(
   productOptionPrices: ProductOptionPrice[];
   invoiceDetails: InvoiceDetailRow[];
 }> {
-  await getSession();
+  await requireAccess('Invoice_Detail', 'read');
 
   const service = await EditRegistrationService.getInstance();
   const invoiceDetails = await service.getInvoiceDetails(eventParticipantId);
@@ -112,7 +120,7 @@ export async function fetchParticipantDetails(
 }
 
 export async function fetchMoveTargetEvents(eventId: number): Promise<MoveTargetEvent[]> {
-  await getSession();
+  await requireAccess('Events', 'read');
 
   const service = await EditRegistrationService.getInstance();
   const event = await service.getRegistrationEvent(eventId);
@@ -125,7 +133,7 @@ export async function fetchProductOptionsForProduct(productId: number): Promise<
   groups: ProductOptionGroup[];
   prices: ProductOptionPrice[];
 }> {
-  await getSession();
+  await requireAccess('Product_Option_Prices', 'read');
 
   const service = await EditRegistrationService.getInstance();
   const groups = await service.getProductOptionGroups(productId);
@@ -141,8 +149,7 @@ export async function saveRegistrationEdits(
   | { success: true; paymentInfo?: { newTotal: number; totalPaid: number; invoiceGuid: string } }
   | { success: false; error: string }
 > {
-  const session = await getSession();
-  const userId = await getCurrentUserIdFromSession(session);
+  await requireAccess('Event_Participants', 'update');
 
   try {
     const service = await EditRegistrationService.getInstance();
@@ -157,7 +164,6 @@ export async function saveRegistrationEdits(
       await service.updateParticipationStatus(
         payload.eventParticipantId,
         payload.participationStatusId,
-        userId,
       );
     }
 
@@ -167,7 +173,6 @@ export async function saveRegistrationEdits(
           update.invoiceDetailId,
           update.newProductOptionPriceId,
           update.newLineTotal,
-          userId,
         );
 
         const detail = await service.getInvoiceDetails(payload.eventParticipantId);
@@ -177,9 +182,8 @@ export async function saveRegistrationEdits(
             updatedDetail.Invoice_ID,
             update.invoiceDetailId,
             update.newLineTotal,
-            userId,
           );
-          const result = await service.recalculateInvoiceTotal(updatedDetail.Invoice_ID, userId);
+          const result = await service.recalculateInvoiceTotal(updatedDetail.Invoice_ID);
           if (result) paymentInfo = result;
         }
 
@@ -189,7 +193,6 @@ export async function saveRegistrationEdits(
             payload.eventParticipantId,
             groupParticipantId,
             update.newProductOptionPriceId,
-            userId,
           );
         }
       }
@@ -210,7 +213,6 @@ export async function saveRegistrationEdits(
             targetProductId,
             mapping.targetProductOptionPriceId,
             mapping.targetLineTotal,
-            userId,
           );
 
           await service.adjustPaymentForInvoice(
@@ -218,7 +220,6 @@ export async function saveRegistrationEdits(
               .find((d) => d.Invoice_Detail_ID === mapping.sourceInvoiceDetailId)?.Invoice_ID ?? 0,
             mapping.sourceInvoiceDetailId,
             mapping.targetLineTotal,
-            userId,
           );
 
           // Sync group membership for the remapped option
@@ -227,7 +228,6 @@ export async function saveRegistrationEdits(
               payload.eventParticipantId,
               groupParticipantId,
               mapping.targetProductOptionPriceId,
-              userId,
             );
           }
         }
@@ -243,13 +243,12 @@ export async function saveRegistrationEdits(
           await service.updateInvoiceDetailProduct(
             unmappedDetails.map((d) => d.Invoice_Detail_ID),
             targetProductId,
-            userId,
           );
         }
 
         // Recalculate invoice total after all changes
         if (allDetails.length > 0) {
-          const result = await service.recalculateInvoiceTotal(allDetails[0].Invoice_ID, userId);
+          const result = await service.recalculateInvoiceTotal(allDetails[0].Invoice_ID);
           if (result) paymentInfo = result;
         }
       }
@@ -257,7 +256,6 @@ export async function saveRegistrationEdits(
       await service.moveParticipantToEvent(
         payload.eventParticipantId,
         payload.moveToEventId,
-        userId,
       );
     }
 

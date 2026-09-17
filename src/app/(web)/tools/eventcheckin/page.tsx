@@ -1,5 +1,5 @@
 import { EventCheckin } from './event-checkin';
-import { parseToolParams } from '@/lib/tool-params';
+import { parseToolParams } from '@/lib/tool-params.server';
 
 interface EventCheckinPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;

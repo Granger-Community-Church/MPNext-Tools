@@ -77,7 +77,7 @@ searchSourceEvents(term, excludeEventId): Promise<SourceEventSearchResult[]>
 fetchSourceEventDetails(sourceEventId): Promise<{ source; rooms /* incl. cancelled */ }>
 applyCopyFromEvent(payload: ApplyCopyPayload): Promise<ApplyCopyResult | { success: false; error }>
 ```
-All call the local `getSession()` guard. `applyCopyFromEvent` resolves `$userId` via `getCurrentUserIdFromSession` (GOTCHA-007) and wraps service errors.
+All call the local `requireAccess()` gate (`AuthorizationService.requireSecurityRole`) — reads as `Events`/`read`, `applyCopyFromEvent` as `Events`/`update` — and `applyCopyFromEvent` wraps service errors. Every `CopyFromEventService` method gates again; the write methods take `$userId` from the gate's return value, never from a parameter. See [security reference](../security/README.md#write-attribution).
 
 ### Payload / result — `copy-from-event.dto.ts`
 ```typescript
@@ -105,9 +105,9 @@ Every base column is qualified (`Events.X`, `Event_Rooms.X`) because every selec
 | `getRoomCounts(ids)` | `Event_Rooms` grouped `COUNT(Event_Room_ID)` | swallows errors → empty map |
 | `getEventRooms(id, { includeCancelled })` | `Event_Rooms` + `Room_ID_TABLE.Room_Name`, `Room_ID_TABLE_Building_ID_TABLE.Building_Name`, `Group_ID_TABLE.Group_Name`, `Group_ID_TABLE_Congregation_ID_TABLE.Congregation_Name AS Group_Congregation_Name`, `Room_Layout_ID_TABLE.Layout_Name` | |
 | `getExistingRoomPairs(ids)` | `Event_Rooms` `Event_ID, Room_ID, Group_ID`, non-cancelled | |
-| `updateEventFields(id, patch, userId)` | `updateTableRecords('Events')` **without** a schema | see Gotchas |
-| `createEventRooms(records, userId)` | `createTableRecords('Event_Rooms', …, { schema: EventRoomCreateSchema })` | |
-| `applyCopy(payload, userId)` | orchestration | |
+| `updateEventFields(id, patch)` | `updateTableRecords('Events')` **without** a schema | see Gotchas |
+| `createEventRooms(records)` | `createTableRecords('Event_Rooms', …, { schema: EventRoomCreateSchema })` | |
+| `applyCopy(payload)` | orchestration | |
 
 ## How it works
 1. Mount → `fetchCopyFromEventData(recordID)`: target values, series, target rooms, and events with the same title (for the search's initial list).

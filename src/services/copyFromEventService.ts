@@ -1,4 +1,5 @@
 import { MPHelper } from '@/lib/providers/ministry-platform';
+import { AuthorizationService } from '@/services/authorizationService';
 import { MP_FETCH_BATCH_SIZE } from '@/lib/constants';
 import { escapeFilterString, validatePositiveInt } from '@/lib/validation';
 import { COPYABLE_FIELDS, EVENT_ROOM_COPY_COLUMNS, EventRoomCreateSchema, isCopyableTextField } from '@/lib/dto';
@@ -63,6 +64,17 @@ const EVENT_ROOM_SELECT = [
 const SEARCH_TOP = 25;
 const SERIES_PROC = 'api_Common_GetEventsInSeries';
 
+/**
+ * Every method gates, reads included (see .claude/references/security/README.md).
+ * For writes, the gate's return value is the ONLY source of `$userId`.
+ */
+function requireAccess(
+  table: string,
+  operation: 'read' | 'create' | 'update' | 'delete',
+): Promise<number> {
+  return AuthorizationService.getInstance().requireSecurityRole({ table, operation });
+}
+
 function chunk<T>(items: T[], size: number): T[][] {
   const out: T[][] = [];
   for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
@@ -95,6 +107,7 @@ export class CopyFromEventService {
   // ---- Events -------------------------------------------------------------
 
   async getEventFieldValues(eventId: number): Promise<EventFieldValues | null> {
+    await requireAccess('Events', 'read');
     validatePositiveInt(eventId);
     const rows = await this.mp.getTableRecords<EventFieldValues>({
       table: 'Events',
@@ -106,6 +119,7 @@ export class CopyFromEventService {
   }
 
   async getEventFieldValuesForIds(eventIds: number[]): Promise<EventFieldValues[]> {
+    await requireAccess('Events', 'read');
     const results: EventFieldValues[] = [];
     for (const batch of chunk(eventIds, MP_FETCH_BATCH_SIZE)) {
       batch.forEach(validatePositiveInt);
@@ -126,6 +140,7 @@ export class CopyFromEventService {
    * this goes through the core MP procedure.
    */
   async getSeriesOccurrences(eventId: number): Promise<SeriesOccurrence[]> {
+    await requireAccess('Events', 'read');
     validatePositiveInt(eventId);
     const result = await this.mp.executeProcedure(SERIES_PROC, { '@EventID': eventId });
     const rows = (result?.[0] ?? []) as Array<Record<string, unknown>>;
@@ -145,6 +160,7 @@ export class CopyFromEventService {
     excludeEventId: number;
     top?: number;
   }): Promise<SourceEventSearchResult[]> {
+    await requireAccess('Events', 'read');
     validatePositiveInt(opts.excludeEventId);
     const conditions: string[] = [`Events.Event_ID <> ${opts.excludeEventId}`];
 
@@ -168,8 +184,12 @@ export class CopyFromEventService {
     });
   }
 
-  /** Non-cancelled room counts per event. Never throws; returns an empty map on failure. */
+  /**
+   * Non-cancelled room counts per event. An MP failure returns an empty map; an
+   * unauthorized caller is refused before the try, never swallowed into it.
+   */
   async getRoomCounts(eventIds: number[]): Promise<Map<number, number>> {
+    await requireAccess('Event_Rooms', 'read');
     const counts = new Map<number, number>();
     if (eventIds.length === 0) return counts;
     try {
@@ -198,6 +218,7 @@ export class CopyFromEventService {
   // ---- Event_Rooms ----------------------------------------------------------
 
   async getEventRooms(eventId: number, opts: { includeCancelled: boolean }): Promise<EventRoomRow[]> {
+    await requireAccess('Event_Rooms', 'read');
     validatePositiveInt(eventId);
     const conditions = [`Event_Rooms.Event_ID = ${eventId}`];
     if (!opts.includeCancelled) conditions.push('Event_Rooms.Cancelled = 0');
@@ -211,6 +232,7 @@ export class CopyFromEventService {
 
   /** Keys (see `pairKey`) of every non-cancelled Room+Group pair on the given events. */
   async getExistingRoomPairs(eventIds: number[]): Promise<Set<string>> {
+    await requireAccess('Event_Rooms', 'read');
     const pairs = new Set<string>();
     for (const batch of chunk(eventIds, MP_FETCH_BATCH_SIZE)) {
       batch.forEach(validatePositiveInt);
@@ -229,24 +251,26 @@ export class CopyFromEventService {
   async updateEventFields(
     eventId: number,
     patch: Partial<Record<CopyableField, string | number | null>>,
-    userId: number,
   ): Promise<void> {
+    const $userId = await requireAccess('Events', 'update');
     // No schema: the generated EventsSchema predates this org's custom columns
     // (Additional_Description, Registrant_Group) and Zod would strip them.
-    await this.mp.updateTableRecords('Events', [{ Event_ID: eventId, ...patch }], { $userId: userId });
+    await this.mp.updateTableRecords('Events', [{ Event_ID: eventId, ...patch }], { $userId });
   }
 
-  async createEventRooms(records: EventRoomCreate[], userId: number): Promise<void> {
+  async createEventRooms(records: EventRoomCreate[]): Promise<void> {
+    const $userId = await requireAccess('Event_Rooms', 'create');
     if (records.length === 0) return;
     await this.mp.createTableRecords('Event_Rooms', records, {
       schema: EventRoomCreateSchema,
-      $userId: userId,
+      $userId,
     });
   }
 
   // ---- Orchestration --------------------------------------------------------
 
-  async applyCopy(payload: ApplyCopyPayload, userId: number): Promise<ApplyCopyResult> {
+  async applyCopy(payload: ApplyCopyPayload): Promise<ApplyCopyResult> {
+    await requireAccess('Events', 'update');
     validatePositiveInt(payload.targetEventId);
     validatePositiveInt(payload.sourceEventId);
     if (payload.targetEventId === payload.sourceEventId) {
@@ -330,7 +354,7 @@ export class CopyFromEventService {
             }
           }
           if (res.fieldsUpdated.length > 0) {
-            await this.updateEventFields(occurrence.Event_ID, patch, userId);
+            await this.updateEventFields(occurrence.Event_ID, patch);
           }
         } catch (error) {
           res.fieldsUpdated = [];
@@ -351,7 +375,7 @@ export class CopyFromEventService {
             existingPairs.add(key);
           }
           if (toCreate.length > 0) {
-            await this.createEventRooms(toCreate, userId);
+            await this.createEventRooms(toCreate);
             res.roomsCreated = toCreate.length;
           }
         } catch (error) {

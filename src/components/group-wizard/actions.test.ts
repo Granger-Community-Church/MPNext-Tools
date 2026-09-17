@@ -8,9 +8,7 @@ const {
   mockGetGroup,
   mockCreateGroup,
   mockUpdateGroup,
-  mockGetUserIdByGuid,
   mockGroupGetInstance,
-  mockUserGetInstance,
 } = vi.hoisted(() => ({
   mockGetSession: vi.fn(),
   mockFetchAllLookups: vi.fn(),
@@ -19,9 +17,7 @@ const {
   mockGetGroup: vi.fn(),
   mockCreateGroup: vi.fn(),
   mockUpdateGroup: vi.fn(),
-  mockGetUserIdByGuid: vi.fn(),
   mockGroupGetInstance: vi.fn(),
-  mockUserGetInstance: vi.fn(),
 }));
 
 vi.mock('@/lib/auth', () => ({
@@ -32,12 +28,44 @@ vi.mock('next/headers', () => ({
   headers: vi.fn().mockResolvedValue(new Headers()),
 }));
 
-vi.mock('@/services/groupService', () => ({
-  GroupService: { getInstance: mockGroupGetInstance },
+/**
+ * These actions now authorize through AuthorizationService instead of a bare
+ * session check.
+ *
+ * The default implementation (set in beforeEach) delegates to the same
+ * `mockGetSession` these tests already drive, so every existing session-shape
+ * test keeps its original meaning. Tests that need the gate itself to refuse —
+ * as opposed to the session being absent — override it with
+ * `mockRequireSecurityRole.mockRejectedValueOnce(...)`.
+ *
+ * 42 is the acting MP User_ID and the ONLY source of write attribution, so
+ * assertions that a service was called WITHOUT a userId argument are asserting
+ * exactly that.
+ */
+const { mockRequireSecurityRole } = vi.hoisted(() => ({
+  mockRequireSecurityRole: vi.fn(),
 }));
 
-vi.mock('@/services/userService', () => ({
-  UserService: { getInstance: mockUserGetInstance },
+vi.mock('@/services/authorizationService', () => ({
+  AuthorizationService: {
+    getInstance: () => ({
+      requireSecurityRole: mockRequireSecurityRole,
+      hasSecurityRole: async () => {
+        try {
+          await mockRequireSecurityRole();
+          return true;
+        } catch {
+          return false;
+        }
+      },
+    }),
+  },
+  UnauthorizedError: class UnauthorizedError extends Error {},
+}));
+
+
+vi.mock('@/services/groupService', () => ({
+  GroupService: { getInstance: mockGroupGetInstance },
 }));
 
 import {
@@ -95,6 +123,11 @@ const BASE_FORM: GroupWizardFormData = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+mockRequireSecurityRole.mockImplementation(async () => {
+  const session = await mockGetSession();
+  if (!session?.user?.id) throw new Error('Unauthorized');
+  return 42;
+});
   mockGroupGetInstance.mockResolvedValue({
     fetchAllLookups: mockFetchAllLookups,
     searchContacts: mockSearchContacts,
@@ -102,9 +135,6 @@ beforeEach(() => {
     getGroup: mockGetGroup,
     createGroup: mockCreateGroup,
     updateGroup: mockUpdateGroup,
-  });
-  mockUserGetInstance.mockResolvedValue({
-    getUserIdByGuid: mockGetUserIdByGuid,
   });
 });
 
@@ -257,26 +287,31 @@ describe('createGroup', () => {
     expect(result).toEqual({ success: false, error: 'Unauthorized' });
   });
 
-  it('returns User GUID not found in session error when userGuid is absent', async () => {
-    mockGetSession.mockResolvedValueOnce({ user: { id: 'user-1' } });
+  it('is refused when the authorization gate denies the caller', async () => {
+    // A signed-in MP user with no qualifying security role: the session is
+    // valid, the gate refuses anyway. This is the case a bare session check
+    // used to let through.
+    //
+    // No `mockGetSession` value is queued here on purpose: the rejection
+    // short-circuits the gate's default implementation, so a queued
+    // `mockResolvedValueOnce` would go unconsumed and leak into the next test.
+    mockRequireSecurityRole.mockRejectedValueOnce(new Error('Not authorized'));
 
     const result = await createGroup(BASE_FORM);
 
-    expect(result).toEqual({ success: false, error: 'User GUID not found in session' });
+    expect(result).toEqual({ success: false, error: 'Not authorized' });
     expect(mockCreateGroup).not.toHaveBeenCalled();
   });
 
-  it('resolves MP user id and creates group on happy path', async () => {
+  it('creates the group on the happy path, passing no caller-supplied userId', async () => {
     mockGetSession.mockResolvedValueOnce({
       user: { id: 'user-1', userGuid: '550e8400-e29b-41d4-a716-446655440000' },
     });
-    mockGetUserIdByGuid.mockResolvedValueOnce(42);
     mockCreateGroup.mockResolvedValueOnce({ Group_ID: 200, Group_Name: 'Test Group' });
 
     const result = await createGroup(BASE_FORM);
 
-    expect(mockGetUserIdByGuid).toHaveBeenCalledWith('550e8400-e29b-41d4-a716-446655440000');
-    expect(mockCreateGroup).toHaveBeenCalledWith(BASE_FORM, 42);
+    expect(mockCreateGroup).toHaveBeenCalledWith(BASE_FORM);
     expect(result).toEqual({ success: true, groupId: 200, groupName: 'Test Group' });
   });
 
@@ -284,7 +319,6 @@ describe('createGroup', () => {
     mockGetSession.mockResolvedValueOnce({
       user: { id: 'user-1', userGuid: '550e8400-e29b-41d4-a716-446655440000' },
     });
-    mockGetUserIdByGuid.mockResolvedValueOnce(42);
     mockCreateGroup.mockRejectedValueOnce(new Error('MP create failed'));
 
     const result = await createGroup(BASE_FORM);
@@ -296,7 +330,6 @@ describe('createGroup', () => {
     mockGetSession.mockResolvedValueOnce({
       user: { id: 'user-1', userGuid: '550e8400-e29b-41d4-a716-446655440000' },
     });
-    mockGetUserIdByGuid.mockResolvedValueOnce(42);
     mockCreateGroup.mockRejectedValueOnce('boom');
 
     const result = await createGroup(BASE_FORM);
@@ -314,25 +347,31 @@ describe('updateGroup', () => {
     expect(result).toEqual({ success: false, error: 'Unauthorized' });
   });
 
-  it('returns User GUID not found in session error when userGuid is absent', async () => {
-    mockGetSession.mockResolvedValueOnce({ user: { id: 'user-1' } });
+  it('is refused when the authorization gate denies the caller', async () => {
+    // A signed-in MP user with no qualifying security role: the session is
+    // valid, the gate refuses anyway. This is the case a bare session check
+    // used to let through.
+    //
+    // No `mockGetSession` value is queued here on purpose: the rejection
+    // short-circuits the gate's default implementation, so a queued
+    // `mockResolvedValueOnce` would go unconsumed and leak into the next test.
+    mockRequireSecurityRole.mockRejectedValueOnce(new Error('Not authorized'));
 
     const result = await updateGroup(100, BASE_FORM);
 
-    expect(result).toEqual({ success: false, error: 'User GUID not found in session' });
+    expect(result).toEqual({ success: false, error: 'Not authorized' });
     expect(mockUpdateGroup).not.toHaveBeenCalled();
   });
 
-  it('resolves MP user id and updates group on happy path', async () => {
+  it('updates the group on the happy path, passing no caller-supplied userId', async () => {
     mockGetSession.mockResolvedValueOnce({
       user: { id: 'user-1', userGuid: '550e8400-e29b-41d4-a716-446655440000' },
     });
-    mockGetUserIdByGuid.mockResolvedValueOnce(42);
     mockUpdateGroup.mockResolvedValueOnce({ Group_ID: 100, Group_Name: 'Updated' });
 
     const result = await updateGroup(100, BASE_FORM);
 
-    expect(mockUpdateGroup).toHaveBeenCalledWith(100, BASE_FORM, 42);
+    expect(mockUpdateGroup).toHaveBeenCalledWith(100, BASE_FORM);
     expect(result).toEqual({ success: true, groupId: 100, groupName: 'Updated' });
   });
 
@@ -340,7 +379,6 @@ describe('updateGroup', () => {
     mockGetSession.mockResolvedValueOnce({
       user: { id: 'user-1', userGuid: '550e8400-e29b-41d4-a716-446655440000' },
     });
-    mockGetUserIdByGuid.mockResolvedValueOnce(42);
     mockUpdateGroup.mockRejectedValueOnce(new Error('MP update failed'));
 
     const result = await updateGroup(100, BASE_FORM);
@@ -352,7 +390,6 @@ describe('updateGroup', () => {
     mockGetSession.mockResolvedValueOnce({
       user: { id: 'user-1', userGuid: '550e8400-e29b-41d4-a716-446655440000' },
     });
-    mockGetUserIdByGuid.mockResolvedValueOnce(42);
     mockUpdateGroup.mockRejectedValueOnce('boom');
 
     const result = await updateGroup(100, BASE_FORM);

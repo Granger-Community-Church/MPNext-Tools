@@ -1,5 +1,5 @@
 import { CopyFromEvent } from './copy-from-event';
-import { parseToolParams } from '@/lib/tool-params';
+import { parseToolParams } from '@/lib/tool-params.server';
 
 interface CopyFromEventPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
